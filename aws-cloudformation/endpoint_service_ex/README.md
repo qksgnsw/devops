@@ -12,6 +12,7 @@
 
 ### prompt
 
+```text
 I need aws cloudformation template. 
 
 It's has two VPC, each VPC is cidr block 10.0.0.0/16 and 20.0.0.0/16. and then each has a public subnet that is 10.0.0.0/24 and 20.0.0.0/24. 
@@ -25,6 +26,7 @@ subnet in VPC1 has a basic EC2 instance that enable webserver and ssh.
 subnet in VPC2 has two basic EC2 instance that enable webserver and ssh.
 
 all EC2 instances have that using NetworkInterfaces config set private ip that first available, subnet id, security group, device index, enable public ip. and then ami id is ami-01056eaaa603955a4. and then user data is that "
+```
 ```sh
 #!/bin/bash
 echo "password!" | passwd --stdin root
@@ -38,8 +40,9 @@ systemctl start httpd.service
 systemctl enable httpd.service
 echo “Hello World from $(hostname -f)” > /var/www/html/index.html
 ```
-
-
+```text
+"
 VPC2 has target group that includ EC2 instances, has load balancer.
 
 EC2 instance in VPC1 have to connect to load balancer in VPC2 using interface endpoint and private link, endpoint service.
+```

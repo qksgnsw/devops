@@ -11,6 +11,7 @@
    3. [ ] Endpoint service
 
 ### prompt
+- 해당 이미지는 ami-01056eaaa603955a4 기준이다.
 
 ```text
 I need aws cloudformation template. 

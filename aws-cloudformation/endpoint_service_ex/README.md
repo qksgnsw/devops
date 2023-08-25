@@ -25,17 +25,20 @@ subnet in VPC1 has a basic EC2 instance that enable webserver and ssh.
 subnet in VPC2 has two basic EC2 instance that enable webserver and ssh.
 
 all EC2 instances have that using NetworkInterfaces config set private ip that first available, subnet id, security group, device index, enable public ip. and then ami id is ami-01056eaaa603955a4. and then user data is that "
+```sh
 #!/bin/bash
-            echo "password!" | passwd --stdin root
-            sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-            sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-            systemctl restart sshd
-            yum update -y
-            yum install -y httpd.x86_64
-            systemctl start httpd.service
-            systemctl enable httpd.service
-            echo “Hello World from $(hostname -f)” > /var/www/html/index.html
-"
+echo "password!" | passwd --stdin root
+sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+systemctl restart sshd
+
+yum update -y
+yum install -y httpd.x86_64
+systemctl start httpd.service
+systemctl enable httpd.service
+echo “Hello World from $(hostname -f)” > /var/www/html/index.html
+```
+
 
 VPC2 has target group that includ EC2 instances, has load balancer.
 

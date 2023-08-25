@@ -1,4 +1,4 @@
-# 01. VPC Peering 개요와 특징
+# VPC Peering 개요와 특징
 
 ---
 

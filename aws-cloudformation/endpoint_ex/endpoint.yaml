@@ -1,0 +1,152 @@
+Resources:
+  EPVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: EP-VPC
+  EPIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: EP-IGW
+
+  EPVPCGWATTACH:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref EPVPC
+      InternetGatewayId: !Ref EPIGW
+
+  EPPUBSN1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EPVPC
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: ap-northeast-2a
+      Tags:
+        - Key: Name
+          Value: EP-Pub-SN1
+
+  EPPRISN2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EPVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: ap-northeast-2a
+      Tags:
+        - Key: Name
+          Value: EP-Pri-SN2
+
+  EPPUBRT1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref EPVPC
+      Tags:
+        - Key: Name
+          Value: EP-Pub-RT1
+
+  EPPUBSNRTASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref EPPUBSN1
+      RouteTableId: !Ref EPPUBRT1
+
+  EPPUBRTROUTE:
+    Type: AWS::EC2::Route
+    DependsOn: EPIGW
+    Properties:
+      RouteTableId: !Ref EPPUBRT1
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref EPIGW
+
+  EPPRIRT2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref EPVPC
+      Tags:
+        - Key: Name
+          Value: EP-Pri-RT2
+
+  EPPRISNRTASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref EPPRISN2
+      RouteTableId: !Ref EPPRIRT2
+
+  EPPUBSG1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH, ICMP
+      VpcId: !Ref EPVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: 8
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+  EPPRISG2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH, ICMP
+      VpcId: !Ref EPVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: 8
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+  EPPUBEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      KeyName: EP-Key
+      Tags:
+        - Key: Name
+          Value: EP-Pub-EC2
+      AvailabilityZone: ap-northeast-2a
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.0.0.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref EPPUBSG1
+          SubnetId: !Ref EPPUBSN1
+
+  EPPRIEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      KeyName: EP-Key
+      Tags:
+        - Key: Name
+          Value: EP-Pri-EC2
+      AvailabilityZone: ap-northeast-2a
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: false
+          PrivateIpAddress: 10.0.1.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref EPPRISG2
+          SubnetId: !Ref EPPRISN2
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            echo "p@ssw0rd" | passwd --stdin root
+            sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+            sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+            systemctl restart sshd

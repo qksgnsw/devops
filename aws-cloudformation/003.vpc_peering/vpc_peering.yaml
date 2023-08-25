@@ -5,14 +5,14 @@ Resources:
   VPC1:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 10.0.0.0/16
+      CidrBlock: 10.41.0.0/16
       EnableDnsSupport: true
       EnableDnsHostnames: true
 
   VPC2:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 20.0.0.0/16
+      CidrBlock: 10.42.0.0/16
       EnableDnsSupport: true
       EnableDnsHostnames: true
 
@@ -21,21 +21,14 @@ Resources:
     Properties:
       AvailabilityZone: !Select [0, !GetAZs '']
       VpcId: !Ref VPC1
-      CidrBlock: 10.0.0.0/24
+      CidrBlock: 10.41.1.0/24
 
   PublicSubnet1VPC2:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select [0, !GetAZs '']
       VpcId: !Ref VPC2
-      CidrBlock: 20.0.0.0/24
-
-  PublicSubnet2VPC2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Select [2, !GetAZs '']
-      VpcId: !Ref VPC2
-      CidrBlock: 20.0.1.0/24
+      CidrBlock: 10.42.1.0/24
 
   InternetGateway1:
     Type: AWS::EC2::InternetGateway
@@ -65,6 +58,30 @@ Resources:
     Properties:
       VpcId: !Ref VPC2
 
+  #### 추가
+  VpcPeeringConnection:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      PeerVpcId: !Ref VPC2
+      VpcId: !Ref VPC1
+
+  AccepterRoute1:
+    Type: AWS::EC2::Route
+    DependsOn: VpcPeeringConnection
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1VPC1
+      DestinationCidrBlock: 10.42.0.0/16
+      VpcPeeringConnectionId: !Ref VpcPeeringConnection
+
+  AccepterRoute2:
+    Type: AWS::EC2::Route
+    DependsOn: VpcPeeringConnection
+    Properties:
+      RouteTableId: !Ref PublicRouteTable1VPC2
+      DestinationCidrBlock: 10.41.0.0/16
+      VpcPeeringConnectionId: !Ref VpcPeeringConnection
+  #### 추가
+
   PublicRoute1VPC1:
     Type: AWS::EC2::Route
     DependsOn: InternetGatewayAttachment1
@@ -93,12 +110,6 @@ Resources:
       SubnetId: !Ref PublicSubnet1VPC2
       RouteTableId: !Ref PublicRouteTable1VPC2
 
-  SubnetRouteTableAssociation2VPC2:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet2VPC2
-      RouteTableId: !Ref PublicRouteTable1VPC2
-
   SecurityGroupVPC1:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -113,7 +124,7 @@ Resources:
           IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-        - CidrIp: 0.0.0.0/0
+        - CidrIp: 10.42.0.0/16
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
@@ -136,7 +147,7 @@ Resources:
           IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-        - CidrIp: 0.0.0.0/0
+        - CidrIp: 10.41.0.0/16
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
@@ -152,7 +163,7 @@ Resources:
       ImageId: ami-01056eaaa603955a4
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
-          PrivateIpAddress: 10.0.0.100
+          PrivateIpAddress: 10.41.1.100
           DeviceIndex: 0
           GroupSet:
             - !Ref SecurityGroupVPC1
@@ -177,7 +188,7 @@ Resources:
       ImageId: ami-01056eaaa603955a4
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
-          PrivateIpAddress: 20.0.0.100
+          PrivateIpAddress: 10.42.1.100
           DeviceIndex: 0
           GroupSet:
             - !Ref SecurityGroupVPC2
@@ -194,96 +205,5 @@ Resources:
           systemctl start httpd.service
           systemctl enable httpd.service
           echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+
   
-  EC2Instance2VPC2:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      ImageId: ami-01056eaaa603955a4
-      NetworkInterfaces:
-        - AssociatePublicIpAddress: true
-          PrivateIpAddress: 20.0.1.100
-          DeviceIndex: 0
-          GroupSet:
-            - !Ref SecurityGroupVPC2
-          SubnetId: !Ref PublicSubnet2VPC2
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          echo "password!" | passwd --stdin root
-          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-          systemctl restart sshd
-          yum update -y
-          yum install -y httpd.x86_64
-          systemctl start httpd.service
-          systemctl enable httpd.service
-          echo "Hello World from $(hostname -f)" > /var/www/html/index.html
-
-# 인터넷 경계가 아닌 내부 경계로
-# nlb로 만들어야함.
-# 1. nlb와 연결하는 endpoint service 생성
-# 2. 1에서 만든 endpoint service와 연결하는 interface endpoint 생성
-# 3. endpoint service에서 엔드포인트 연결 요청 수락
-# 4. endpoint에서 DNS 확인. 해당 DNS로 테스트하면 완료됨.
-
-
-
-
-
-  # LoadBalancerVPC2:
-  #   Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-  #   Properties:
-  #     Subnets:
-  #       - !Ref PublicSubnet1VPC2
-  #       - !Ref PublicSubnet2VPC2
-  #     SecurityGroups:
-  #       - !Ref SecurityGroupVPC2
-
-  # TargetGroupVPC2:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     HealthCheckIntervalSeconds: 30
-  #     HealthCheckProtocol: HTTP
-  #     HealthCheckTimeoutSeconds: 15
-  #     HealthyThresholdCount: 5
-  #     Matcher:
-  #       HttpCode: '200'
-  #     Name: EC2TargetGroup
-  #     Port: 80
-  #     Protocol: HTTP
-  #     TargetGroupAttributes:
-  #     - Key: deregistration_delay.timeout_seconds
-  #       Value: '20'
-  #     Targets:
-  #     - Id:
-  #         !Ref EC2Instance1VPC2
-  #         !Ref EC2Instance2VPC2
-  #     VpcId: !Ref VPC2
-
-  # LoadBalancerListenerVPC2:
-  #   Type: AWS::ElasticLoadBalancingV2::Listener
-  #   Properties:
-  #     DefaultActions:
-  #       - Type: forward
-  #         TargetGroupArn: !Ref TargetGroupVPC2
-  #     LoadBalancerArn: !Ref LoadBalancerVPC2
-  #     Port: 80
-  #     Protocol: HTTP
-        
-  # VPC2EndpointService:
-  #   Type: AWS::EC2::VPCEndpointService
-  #   Properties:
-  #     NetworkLoadBalancerArns:
-  #       - !Ref LoadBalancerVPC2
-
-  # VPC1InterfaceEndpoint:
-  #   Type: AWS::EC2::VPCEndpoint
-  #   Properties:
-  #     VpcEndpointType: 'Interface'
-  #     ServiceName: !Join [".", ["com.amazonaws", !Ref "AWS::Region", "elasticloadbalancing"]]
-  #     VpcId: !Ref VPC1
-  #     SubnetIds:
-  #       - !Ref PublicSubnet1VPC1
-  #     SecurityGroupIds:
-  #       - !Ref SecurityGroupVPC1

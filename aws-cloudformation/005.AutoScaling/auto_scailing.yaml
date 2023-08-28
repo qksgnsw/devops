@@ -192,61 +192,61 @@ Resources:
           systemctl enable httpd.service
           echo "Hello World from $(hostname -f)" > /var/www/html/index.html
   
-  EC2InstanceWeb1:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      ImageId: ami-01056eaaa603955a4
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
-      Tags:
-      - Key: Name
-        Value: EC2InstanceWeb1
-      NetworkInterfaces:
-        - AssociatePublicIpAddress: true
-          DeviceIndex: 0
-          GroupSet:
-            - !Ref EC2SecurityGroup
-          SubnetId: !Ref PrivateSubnet1
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          echo "password!" | passwd --stdin root
-          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-          systemctl restart sshd
-          yum update -y
-          yum install -y httpd.x86_64
-          systemctl start httpd.service
-          systemctl enable httpd.service
-          echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+  # EC2InstanceWeb1:
+  #   Type: AWS::EC2::Instance
+  #   Properties:
+  #     InstanceType: t2.micro
+  #     ImageId: ami-01056eaaa603955a4
+  #     AvailabilityZone: !Select [ 0, !GetAZs '' ]
+  #     Tags:
+  #     - Key: Name
+  #       Value: EC2InstanceWeb1
+  #     NetworkInterfaces:
+  #       - AssociatePublicIpAddress: true
+  #         DeviceIndex: 0
+  #         GroupSet:
+  #           - !Ref EC2SecurityGroup
+  #         SubnetId: !Ref PrivateSubnet1
+  #     UserData:
+  #       Fn::Base64: !Sub |
+  #         #!/bin/bash
+  #         echo "password!" | passwd --stdin root
+  #         sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+  #         sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+  #         systemctl restart sshd
+  #         yum update -y
+  #         yum install -y httpd.x86_64
+  #         systemctl start httpd.service
+  #         systemctl enable httpd.service
+  #         echo "Hello World from $(hostname -f)" > /var/www/html/index.html
   
-  EC2InstanceWeb2:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      ImageId: ami-01056eaaa603955a4
-      AvailabilityZone: !Select [ 2, !GetAZs '' ]
-      Tags:
-      - Key: Name
-        Value: EC2InstanceWeb2
-      NetworkInterfaces:
-        - AssociatePublicIpAddress: true
-          DeviceIndex: 0
-          GroupSet:
-            - !Ref EC2SecurityGroup
-          SubnetId: !Ref PrivateSubnet2
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          echo "password!" | passwd --stdin root
-          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-          systemctl restart sshd
-          yum update -y
-          yum install -y httpd.x86_64
-          systemctl start httpd.service
-          systemctl enable httpd.service
-          echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+  # EC2InstanceWeb2:
+  #   Type: AWS::EC2::Instance
+  #   Properties:
+  #     InstanceType: t2.micro
+  #     ImageId: ami-01056eaaa603955a4
+  #     AvailabilityZone: !Select [ 2, !GetAZs '' ]
+  #     Tags:
+  #     - Key: Name
+  #       Value: EC2InstanceWeb2
+  #     NetworkInterfaces:
+  #       - AssociatePublicIpAddress: true
+  #         DeviceIndex: 0
+  #         GroupSet:
+  #           - !Ref EC2SecurityGroup
+  #         SubnetId: !Ref PrivateSubnet2
+  #     UserData:
+  #       Fn::Base64: !Sub |
+  #         #!/bin/bash
+  #         echo "password!" | passwd --stdin root
+  #         sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+  #         sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+  #         systemctl restart sshd
+  #         yum update -y
+  #         yum install -y httpd.x86_64
+  #         systemctl start httpd.service
+  #         systemctl enable httpd.service
+  #         echo "Hello World from $(hostname -f)" > /var/www/html/index.html
 
 ###### 기본 설정 완료
 
@@ -282,7 +282,7 @@ Resources:
       LaunchTemplateData:
         NetworkInterfaces:
           - DeviceIndex: 0
-            AssociatePublicIpAddress: true
+            # AssociatePublicIpAddress: true
             Groups:
               - !Ref EC2SecurityGroup
             DeleteOnTermination: true
@@ -318,7 +318,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       VpcId: !Ref VPC
-      Name: webtest
+      Name: AutoScailingEC2
       Port: 80
       Protocol: HTTP
       HealthCheckEnabled: true
@@ -350,14 +350,14 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      MaxSize: 4
-      MinSize: 2
+      MaxSize: 2
+      MinSize: 1
       DesiredCapacity: 2
       TargetGroupARNs:
         - !Ref TargetGroup
       Tags:
         - Key: Name
-          Value: web-asg
+          Value: ASG
           PropagateAtLaunch: true
 
   ASGPolicy:
@@ -367,5 +367,6 @@ Resources:
       PolicyType: TargetTrackingScaling
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
+        # ALBRequestCountPerTarget | ASGAverageCPUUtilization | ASGAverageNetworkIn | ASGAverageNetworkOut
           PredefinedMetricType: ASGAverageCPUUtilization
         TargetValue: 5

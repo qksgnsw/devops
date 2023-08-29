@@ -89,7 +89,7 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicRouteTable
 
-### NAT 생성
+### NAT 설정
 # 1. EIP 생성
 # 2. NAT 게이트웨이 생성
 # 3. 프라아빗 네트워크 라우팅 테이블 생성 및 적용
@@ -137,6 +137,7 @@ Resources:
     Properties:
       SubnetId: !Ref PrivateSubnet2
       RouteTableId: !Ref PrivRouteTable
+### NAT 설정
 
   EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup

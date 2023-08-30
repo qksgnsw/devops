@@ -139,7 +139,6 @@ Resources:
               HTTPPort: 80
         Enabled: true
         Aliases: 
-          # - cdn.hey-ban.com # 등록하지 않으면 Route53에서 등록이 불가능
           - !Join [".", [ "cdn", !Ref OriginDomainName ] ] # 등록하지 않으면 Route53에서 등록이 불가능
         DefaultCacheBehavior:
           AllowedMethods:

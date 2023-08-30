@@ -1,1 +1,1 @@
-![함수 파라미터 모음](https://theburningmonk.com/cloudformation-ref-and-getatt-cheatsheet/)
+[함수 파라미터 모음](https://theburningmonk.com/cloudformation-ref-and-getatt-cheatsheet/)

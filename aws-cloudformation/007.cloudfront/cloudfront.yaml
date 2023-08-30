@@ -112,17 +112,14 @@ Resources:
   RouteRecordSet:
     Type: AWS::Route53::RecordSetGroup
     Properties:
-      # HostedZoneName: hey-ban.com.
       HostedZoneName: !Join [".", [ !Ref OriginDomainName, ""] ]
       RecordSets:
-      # - Name: www.hey-ban.com.
       - Name: !Join [".", [ "www", !Ref OriginDomainName, ""] ]
         ResourceRecords: 
         - !GetAtt EC2InstanceWeb.PublicIp
         TTL: '900'
         Type: A
         # 클라우드프론트와의 연결이 필요
-      # - Name: cdn.hey-ban.com.
       - Name: !Join [".", [ "cdn", !Ref OriginDomainName, ""] ]
         AliasTarget:
           DNSName: !GetAtt CloudFront.DomainName
@@ -136,7 +133,6 @@ Resources:
       DistributionConfig:
         Origins:
           - DomainName: !GetAtt EC2InstanceWeb.PublicDnsName
-            # Id: hey-ban.com.
             Id: !Join [".", [ !Ref OriginDomainName, ""] ]
             CustomOriginConfig: 
               OriginProtocolPolicy: http-only
@@ -151,7 +147,6 @@ Resources:
             - HEAD
           ViewerProtocolPolicy: allow-all
           # ViewerProtocolPolicy: redirect-to-https
-          # TargetOriginId: hey-ban.com.
           TargetOriginId: !Join [".", [ !Ref OriginDomainName, ""] ]
           ForwardedValues:
             QueryString: false

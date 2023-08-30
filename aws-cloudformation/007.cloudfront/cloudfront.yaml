@@ -1,0 +1,153 @@
+Resources:
+  CLFVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+     CidrBlock: 10.0.0.0/16
+     EnableDnsSupport: true
+     EnableDnsHostnames: true
+     Tags:
+        - Key: Name
+          Value: CLF-VPC
+
+  CLFIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: CLF-IGW
+
+  CLFIGWAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref CLFIGW
+      VpcId: !Ref CLFVPC
+
+  CLFPublicSN:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CLFVPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Name
+          Value: CLF-Public-SN
+
+  CLFPublicRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CLFVPC
+      Tags:
+        - Key: Name
+          Value: CLF-Public-RT
+
+  CLFPublicSNRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref CLFPublicRT
+      SubnetId: !Ref CLFPublicSN
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: CLFIGWAttachment
+    Properties:
+      RouteTableId: !Ref CLFPublicRT
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref CLFIGW
+
+  CLFSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH, HTTP/S, ICMP
+      VpcId: !Ref CLFVPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: 0.0.0.0/0
+
+  EC2InstanceWeb:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-03df3686945273422 # 상파울루 AMI 
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: EC2InstanceWeb
+      NetworkInterfaces:
+        - PrivateIpAddress: 10.0.0.100
+          AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref CLFSecurityGroup
+          SubnetId: !Ref CLFPublicSN
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum install -y httpd.x86_64
+          sudo systemctl start httpd.service
+          sudo systemctl enable httpd.service
+          sudo echo "<h1>Hello World from $(hostname -f)<h1>\n<p>CloudFront Example</p>" > /var/www/html/index.html
+
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+
+# AWS::Route53::RecordSetGroup
+  RouteRecordSet:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: hey-ban.com.
+      RecordSets:
+      - Name: www.hey-ban.com.
+        ResourceRecords: 
+        - !GetAtt EC2InstanceWeb.PublicIp
+        TTL: '900'
+        Type: A
+      - Name: cdn.hey-ban.com.
+        ResourceRecords: 
+        - !GetAtt cloudfront.DomainName
+        TTL: '900'
+        Type: CNAME
+
+# AWS::CloudFront::Distribution
+  cloudfront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt EC2InstanceWeb.PublicDnsName
+            Id: hey-ban.com.
+            CustomOriginConfig: 
+              OriginProtocolPolicy: http-only
+              HTTPPort: 80
+        Enabled: true
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          ViewerProtocolPolicy: allow-all
+          TargetOriginId: hey-ban.com.
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        ViewerCertificate: 
+          CloudFrontDefaultCertificate: true
+      Tags:
+        - Key: Name
+          Value: CLF

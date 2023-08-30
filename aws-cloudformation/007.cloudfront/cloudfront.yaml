@@ -112,15 +112,18 @@ Resources:
   RouteRecordSet:
     Type: AWS::Route53::RecordSetGroup
     Properties:
-      HostedZoneName: hey-ban.com.
+      # HostedZoneName: hey-ban.com.
+      HostedZoneName: !Join [".", [ !Ref OriginDomainName, ""] ]
       RecordSets:
-      - Name: www.hey-ban.com.
+      # - Name: www.hey-ban.com.
+      - Name: !Join [".", [ "www", !Ref OriginDomainName, ""] ]
         ResourceRecords: 
         - !GetAtt EC2InstanceWeb.PublicIp
         TTL: '900'
         Type: A
         # 클라우드프론트와의 연결이 필요
-      - Name: cdn.hey-ban.com.
+      # - Name: cdn.hey-ban.com.
+      - Name: !Join [".", [ "cdn", !Ref OriginDomainName, ""] ]
         AliasTarget:
           DNSName: !GetAtt CloudFront.DomainName
           HostedZoneId: Z2FDTNDATAQYW2
@@ -133,20 +136,23 @@ Resources:
       DistributionConfig:
         Origins:
           - DomainName: !GetAtt EC2InstanceWeb.PublicDnsName
-            Id: hey-ban.com.
+            # Id: hey-ban.com.
+            Id: !Join [".", [ !Ref OriginDomainName, ""] ]
             CustomOriginConfig: 
               OriginProtocolPolicy: http-only
               HTTPPort: 80
         Enabled: true
         Aliases: 
-          - cdn.hey-ban.com # 등록하지 않으면 Route53에서 등록이 불가능
+          # - cdn.hey-ban.com # 등록하지 않으면 Route53에서 등록이 불가능
+          - !Join [".", [ "cdn", !Ref OriginDomainName ] ] # 등록하지 않으면 Route53에서 등록이 불가능
         DefaultCacheBehavior:
           AllowedMethods:
             - GET
             - HEAD
           ViewerProtocolPolicy: allow-all
           # ViewerProtocolPolicy: redirect-to-https
-          TargetOriginId: hey-ban.com.
+          # TargetOriginId: hey-ban.com.
+          TargetOriginId: !Join [".", [ !Ref OriginDomainName, ""] ]
           ForwardedValues:
             QueryString: false
             Cookies:
@@ -165,3 +171,6 @@ Parameters:
     Type: String
     Description: You must make Certificate from region that is us-east-1.
     AllowedPattern: "arn:aws:acm:.*"
+  OriginDomainName: 
+    Type: String
+    Description: Origin Domain Name.

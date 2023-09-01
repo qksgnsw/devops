@@ -1,0 +1,401 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation Template with Two VPCs and Subnets
+
+Resources:
+# vpcIDC번대 환경 구축
+  # VPC 생성
+  vpcIDC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.60.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: vpcIDC
+  # 서브넷 생성
+  PubSubnetIDC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref vpcIDC
+      CidrBlock: 10.60.0.0/24
+      Tags:
+      - Key: Name
+        Value: PubSubnetIDC
+  PrivSubnetIDC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref vpcIDC
+      CidrBlock: 10.60.1.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnetIDC
+  # 인터넷 게이트웨이 생성 및 설정
+  igwIDC:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+      - Key: Name
+        Value: igwIDC
+  igwAttchIDC:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref vpcIDC
+      InternetGatewayId: !Ref igwIDC
+  # 라우팅 테이블 생성 , 연결 , 설정
+  # - 퍼블릭
+  PubRTIDC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref vpcIDC
+      Tags:
+      - Key: Name
+        Value: PubRTIDC
+  SubnetRouteTableAssociation1vpcIDC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PubSubnetIDC
+      RouteTableId: !Ref PubRTIDC
+  PubRouteIDC:
+    Type: AWS::EC2::Route
+    DependsOn: igwAttchIDC
+    Properties:
+      RouteTableId: !Ref PubRTIDC
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref igwIDC
+  # - 프라이빗
+  PrivRTIDC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref vpcIDC
+      Tags:
+      - Key: Name
+        Value: PrivRTIDC
+  SubnetRouteTableAssociation2vpcIDC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnetIDC
+      RouteTableId: !Ref PrivRTIDC
+  PrivRouteIDC:
+    Type: AWS::EC2::Route
+    DependsOn: 
+      - igwAttchIDC
+      - PrivRTIDC
+      - CGWIDC
+    Properties:
+      RouteTableId: !Ref PrivRTIDC
+      DestinationCidrBlock: 10.50.0.0/16
+      InstanceId: !Ref CGWIDC
+    
+  # 보안 그룹 생성
+  # 모든 트래픽 허용
+  sgCGWIDC:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALLOW SSH, HTTP, ICMP, SWAN
+      VpcId: !Ref vpcIDC
+      Tags:
+      - Key: Name
+        Value: sgCGWIDC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 4500
+          ToPort: 4500
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+  sgEC2IDC:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALLOW SSH, ICMP
+      VpcId: !Ref vpcIDC
+      Tags:
+      - Key: Name
+        Value: sgEC2IDC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+  
+  # EC2 생성
+  # 0. EIP 생성
+  CGWEIPIDC:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref CGWIDC
+  # 1. customer gateway 생성
+  CGWIDC:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      SourceDestCheck: false # NAT Instance의 경우 반드시 false로 설정
+      Tags:
+      - Key: Name
+        Value: CGWIDC
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.60.0.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sgCGWIDC
+          SubnetId: !Ref PubSubnetIDC
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # apache
+          sudo yum update -y
+          sudo yum install -y httpd.x86_64
+          sudo systemctl start httpd.service
+          sudo systemctl enable httpd.service
+          sudo echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+          # openswan 
+          sudo yum install -y openswan
+          sudo echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+          sudo echo "net.ipv4.conf.default.rp_filter = 0" >> /etc/sysctl.conf
+          sudo echo "net.ipv4.conf.default.accept_source_route = 0" >> /etc/sysctl.conf
+          sudo echo "net.ipv4.conf.all.accept_redirects = 0" >> /etc/sysctl.conf
+          sudo echo "net.ipv4.conf.all.send_redirects = 0" >> /etc/sysctl.conf
+          sudo sysctl -p /etc/sysctl.conf
+          # iptable
+          # sudo yum install -y iptables-services
+          # sudo systemctl start iptables
+          # sudo systemctl enable iptables
+          # sudo iptables -F
+          # sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+          # sudo service iptables save
+          # echo "password!" | passwd --stdin root
+          # sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          # sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          # systemctl restart sshd
+
+  EC2IDC:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: EC2IDC
+      NetworkInterfaces:
+        - PrivateIpAddress: 10.60.1.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sgEC2IDC
+          SubnetId: !Ref PrivSubnetIDC
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+
+# vpcAWS번대 환경 구축
+  # VPC 생성
+  vpcAWS:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.50.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: vpcAWS
+  # 서브넷 생성
+  PubSubnetAWS:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref vpcAWS
+      CidrBlock: 10.50.1.0/24
+      Tags:
+      - Key: Name
+        Value: PubSubnetAWS
+  # 게이트웨이 생성 및 연결
+  igwAWS:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: igwAWS
+  igwAttachAWS:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref vpcAWS
+      InternetGatewayId: !Ref igwAWS
+  # 라우팅 테이블 생성, 연결, 설정
+  PubRTAWS:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref vpcAWS
+      Tags:
+      - Key: Name
+        Value: PubRTAWS
+  SubnetRouteTableAssociation1vpcAWS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PubSubnetAWS
+      RouteTableId: !Ref PubRTAWS
+  PubDefaultRouteAWS:
+    Type: AWS::EC2::Route
+    DependsOn: igwAttachAWS
+    Properties:
+      RouteTableId: !Ref PubRTAWS
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref igwAWS
+  PubVPNRouteAWS2:
+    Type: AWS::EC2::Route
+    DependsOn: igwAttachAWS
+    Properties:
+      RouteTableId: !Ref PubRTAWS
+      DestinationCidrBlock: 10.60.0.0/16
+      GatewayId: !Ref VPNGateway
+
+  # 보안 그룹 생성
+  sgEC2AWS:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALLOW SSH, HTTP, ICMP
+      VpcId: !Ref vpcAWS
+      Tags:
+      - Key: Name
+        Value: sgEC2AWS
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+  # EC2 생성
+  EC2AWS2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: EC2AWS2
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.50.1.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sgEC2AWS
+          SubnetId: !Ref PubSubnetAWS
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+
+# site-to-site 커넥션 생성
+# https://docs.aws.amazon.com/ko_kr/vpn/latest/s2svpn/SetUpVPNConnections.html#vpn-create-cgw
+# https://medium.com/petabytz/ipsec-vpn-configuration-on-aws-cloud-using-cloudformation-92078c3aa4c9
+########################
+#                      #
+#       순  서          #
+#                      #
+########################
+# AWS::EC2::CustomerGateway
+# AWS::EC2::VPNGateway
+# AWS::EC2::VPCGatewayAttachment
+# AWS::EC2::VPNConnection
+# AWS::EC2::VPNGatewayRoutePropagation
+# AWS::EC2::VPNConnectionRoute
+########################
+#                      #
+#       설  정          #
+#                      #
+########################
+  # AWS::EC2::CustomerGateway : 고객 게이트웨이 생성
+  CustomerGateway: 
+    Type: AWS::EC2::CustomerGateway
+    DependsOn: 
+      - igwAttchIDC
+      - PrivRTIDC
+      - CGWIDC
+    Properties: 
+        Type: ipsec.1
+        BgpAsn: 65534
+        IpAddress: !Ref CGWEIPIDC
+        Tags:
+        - Key: Name
+          Value: CustomerGateway
+  # AWS::EC2::VPNGateway : 가상 프라이빗 네트워크 생성
+  VPNGateway: 
+    Type: AWS::EC2::VPNGateway
+    Properties:
+      Type: ipsec.1
+      Tags:
+        - Key: Name
+          Value: VPNGateway
+  # AWS::EC2::VPCGatewayAttachment : VPN 게이트웨이를 VPC에 연결
+  AttachGatewayToAWS:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref vpcAWS
+      VpnGatewayId: !Ref VPNGateway
+  # AWS::EC2::VPNConnection : VPN 연결 만들기
+  VPNConnection: 
+    Type: AWS::EC2::VPNConnection
+    Properties: 
+      Type: ipsec.1
+      StaticRoutesOnly: true
+      CustomerGatewayId: !Ref CustomerGateway
+      VpnGatewayId: !Ref VPNGateway
+      Tags:
+        - Key: Name
+          Value: VPNConnection
+  # AWS::EC2::VPNGatewayRoutePropagation : 전파
+  VPNGatewayRouteProp:
+    Type: AWS::EC2::VPNGatewayRoutePropagation
+    DependsOn: 
+    - PubRTAWS
+    - VPNGateway
+    - VPNConnection
+    Properties:
+        RouteTableIds: 
+        - !Ref PubRTAWS
+        VpnGatewayId: !Ref VPNGateway
+  # AWS::EC2::VPNConnectionRoute: 고객 네트워크에서 VPC로 정적 경로 추가
+  ConnectionRoute0: 
+    Type: AWS::EC2::VPNConnectionRoute
+    Properties: 
+      DestinationCidrBlock: 10.60.0.0/16
+      VpnConnectionId: !Ref VPNConnection

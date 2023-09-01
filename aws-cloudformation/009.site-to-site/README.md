@@ -17,6 +17,9 @@
 # 03. 구성도
 ![](./site-to-site.jpeg)
 
+- 기본 인프라 구성까지만 완료
+- 이후 구성은
+- VPC -> VPN -> Site-to-Site 탭에서 
 - openswan으로 구성할 것이고,
 - 아래를 참조하여 나머지 환경을 구성한다.
 
@@ -25,4 +28,6 @@
 - [블로그](https://medium.com/petabytz/ipsec-vpn-configuration-on-aws-cloud-using-cloudformation-92078c3aa4c9)
 
 # 05. openswan 구성파일
-- 1번은 되어있음.
+- 1번은 되어있음. 나머지는 나중에 추후 보강 예정
+- 반드시 해당 구성 파일을 다운받고 내용을 확인하여 작성해야함.
+- Tunnel 1까지만 확인하였음.

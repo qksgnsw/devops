@@ -341,6 +341,14 @@ Resources:
 # - AWS::EC2::TransitGatewayRouteTableAssociation
 # 4단계: Transit Gateway 테스트
 # 5단계: Transit Gateway 삭제
+
+#########################
+#                       #
+#  정적 경로로 잡아주지 않고, #
+#  라우팅 테이블 생성       #
+#  연결, 전파만으로도 가능   #
+#                      #
+########################
   # 1단계: Transit Gateway 생성 
   TGW1:
     Type: "AWS::EC2::TransitGateway"
@@ -353,7 +361,7 @@ Resources:
       VpnEcmpSupport: "enable"
       Tags:
       - Key: Name
-        Value: TransitGateway
+        Value: TGW1
   # 2단계: VPC를 Transit Gateway에 연결
   VPC0TransitGatewayAttachment:
     Type: AWS::EC2::TransitGatewayAttachment
@@ -418,57 +426,57 @@ Resources:
           Value: RedTransitGatewayRouteTable
       TransitGatewayId: !Ref TGW1
   # # 3-2 경로 추가
-  TransitGatewayRoute1Default:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties:       
-      DestinationCidrBlock: 10.0.0.0/16
-      TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
-  TransitGatewayRoute2Default:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      DestinationCidrBlock: 10.10.0.0/16
-      TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
-  TransitGatewayRoute3Default:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      DestinationCidrBlock: 10.20.0.0/16
-      TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
-  TransitGatewayRoute4Default:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      Blackhole: true
-      DestinationCidrBlock: 10.20.2.0/24
-      # TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+  # TransitGatewayRoute1Default:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties:       
+  #     DestinationCidrBlock: 10.0.0.0/16
+  #     TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+  # TransitGatewayRoute2Default:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties: 
+  #     DestinationCidrBlock: 10.10.0.0/16
+  #     TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+  # TransitGatewayRoute3Default:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties: 
+  #     DestinationCidrBlock: 10.20.0.0/16
+  #     TransitGatewayAttachmentId: !Ref VPC01ransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+  # TransitGatewayRoute4Default:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties: 
+  #     Blackhole: true
+  #     DestinationCidrBlock: 10.20.2.0/24
+  #     # TransitGatewayAttachmentId: !Ref VPC2TransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
 
-  TransitGatewayRoute1Blue:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      DestinationCidrBlock: 10.0.0.0/16
-      TransitGatewayAttachmentId: !Ref VPC1TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref BlueTransitGatewayRouteTable
-  TransitGatewayRoute2Blue:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      DestinationCidrBlock: 10.10.0.0/16
-      TransitGatewayAttachmentId: !Ref VPC1TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref BlueTransitGatewayRouteTable
+  # TransitGatewayRoute1Blue:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties: 
+  #     DestinationCidrBlock: 10.0.0.0/16
+  #     TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref BlueTransitGatewayRouteTable
+  # TransitGatewayRoute2Blue:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties: 
+  #     DestinationCidrBlock: 10.10.0.0/16
+  #     TransitGatewayAttachmentId: !Ref VPC1TransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref BlueTransitGatewayRouteTable
 
-  TransitGatewayRoute1Red:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      DestinationCidrBlock: 10.0.0.0/16
-      TransitGatewayAttachmentId: !Ref VPC2TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref RedTransitGatewayRouteTable
-  TransitGatewayRoute2Red:
-    Type: AWS::EC2::TransitGatewayRoute
-    Properties: 
-      DestinationCidrBlock: 10.10.0.0/16
-      TransitGatewayAttachmentId: !Ref VPC2TransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref RedTransitGatewayRouteTable
+  # TransitGatewayRoute1Red:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties: 
+  #     DestinationCidrBlock: 10.0.0.0/16
+  #     TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref RedTransitGatewayRouteTable
+  # TransitGatewayRoute2Red:
+  #   Type: AWS::EC2::TransitGatewayRoute
+  #   Properties: 
+  #     DestinationCidrBlock: 10.10.0.0/16
+  #     TransitGatewayAttachmentId: !Ref VPC2TransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref RedTransitGatewayRouteTable
 
   # 3-3 라우팅 테이블 연결
   TransitGatewayRoute1DefaultAssociation:
@@ -492,16 +500,46 @@ Resources:
     Properties: 
       TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
       TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+  TransitGatewayRoute2DefaultPropagation:
+    Type: AWS::EC2::TransitGatewayRouteTablePropagation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref VPC1TransitGatewayAttachment
+      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+  TransitGatewayRoute3DefaultPropagation:
+    Type: AWS::EC2::TransitGatewayRouteTablePropagation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref VPC2TransitGatewayAttachment
+      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+
   TransitGatewayRoute1BluePropagation:
+    Type: AWS::EC2::TransitGatewayRouteTablePropagation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
+      TransitGatewayRouteTableId: !Ref BlueTransitGatewayRouteTable
+  TransitGatewayRoute2BluePropagation:
     Type: AWS::EC2::TransitGatewayRouteTablePropagation
     Properties: 
       TransitGatewayAttachmentId: !Ref VPC1TransitGatewayAttachment
       TransitGatewayRouteTableId: !Ref BlueTransitGatewayRouteTable
+
   TransitGatewayRoute1RedPropagation:
+    Type: AWS::EC2::TransitGatewayRouteTablePropagation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref VPC0TransitGatewayAttachment
+      TransitGatewayRouteTableId: !Ref RedTransitGatewayRouteTable
+  TransitGatewayRoute2RedPropagation:
     Type: AWS::EC2::TransitGatewayRouteTablePropagation
     Properties: 
       TransitGatewayAttachmentId: !Ref VPC2TransitGatewayAttachment
       TransitGatewayRouteTableId: !Ref RedTransitGatewayRouteTable
+
+  #  블랙홀 추가
+  TransitGatewayRouteDefaultAddedBlackhole:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      Blackhole: true
+      DestinationCidrBlock: 10.20.2.0/24
+      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
 
 # VPC endpoint
   # tgwEndpoint:

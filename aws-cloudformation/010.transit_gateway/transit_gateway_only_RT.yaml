@@ -353,7 +353,7 @@ Resources:
       VpnEcmpSupport: "enable"
       Tags:
       - Key: Name
-        Value: TransitGateway
+        Value: TGW1
   # 2단계: VPC를 Transit Gateway에 연결
   VPC0TransitGatewayAttachment:
     Type: AWS::EC2::TransitGatewayAttachment

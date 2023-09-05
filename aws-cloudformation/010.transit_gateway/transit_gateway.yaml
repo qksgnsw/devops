@@ -1,0 +1,668 @@
+Resources:
+# VPC 3개 생성
+  VPC0:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: VPC0
+  VPC1:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.10.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: VPC1
+  VPC2:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: VPC2
+# VPC0에 인터넷 게이트웨이 생성 및 연결
+  igwVPC0:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+      - Key: Name
+        Value: igwVPC0
+  igwAttchIDC:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC0
+      InternetGatewayId: !Ref igwVPC0
+# VPC0에 퍼블릭 서브넷 두개 생성
+  PubSubnet1VPC0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref VPC0
+      CidrBlock: 10.0.1.0/24
+      Tags:
+      - Key: Name
+        Value: PubSubnet1VPC0
+  PubSubnet2VPC0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs '']
+      VpcId: !Ref VPC0
+      CidrBlock: 10.0.2.0/24
+      Tags:
+      - Key: Name
+        Value: PubSubnet2VPC0
+# 프라이빗서브넷 10개 만들기
+# 서브넷당 2개 + 4개 + 4개
+  # VPC0 = 2개
+  PrivSubnet1VPC0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref VPC0
+      CidrBlock: 10.0.3.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet1VPC0
+  PrivSubnet2VPC0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs '']
+      VpcId: !Ref VPC0
+      CidrBlock: 10.0.4.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet2VPC0
+  # VPC1 = 4개
+  PrivSubnet1VPC1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref VPC1
+      CidrBlock: 10.10.1.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet1VPC1
+  PrivSubnet2VPC1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs '']
+      VpcId: !Ref VPC1
+      CidrBlock: 10.10.2.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet2VPC1
+  PrivSubnet3VPC1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref VPC1
+      CidrBlock: 10.10.3.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet3VPC1
+  PrivSubnet4VPC1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs '']
+      VpcId: !Ref VPC1
+      CidrBlock: 10.10.4.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet4VPC1
+  # VPC2 = 4개
+  PrivSubnet1VPC2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref VPC2
+      CidrBlock: 10.20.1.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet1VPC2
+  PrivSubnet2VPC2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs '']
+      VpcId: !Ref VPC2
+      CidrBlock: 10.20.2.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet2VPC2
+  PrivSubnet3VPC2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      VpcId: !Ref VPC2
+      CidrBlock: 10.20.3.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet3VPC2
+  PrivSubnet4VPC2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs '']
+      VpcId: !Ref VPC2
+      CidrBlock: 10.20.4.0/24
+      Tags:
+      - Key: Name
+        Value: PrivSubnet4VPC2
+
+# 라우팅 테이블 6개 생성, 연결, 설정
+  PubRouteTable1VPC0:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC0
+      Tags:
+      - Key: Name
+        Value: PubRouteTable1VPC0
+  SubnetRouteTableAssociation1VPC0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PubSubnet1VPC0
+      RouteTableId: !Ref PubRouteTable1VPC0
+  SubnetRouteTableAssociation2VPC0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PubSubnet2VPC0
+      RouteTableId: !Ref PubRouteTable1VPC0
+  PubRouteVPC0:
+    Type: AWS::EC2::Route
+    DependsOn: igwAttchIDC
+    Properties:
+      RouteTableId: !Ref PubRouteTable1VPC0
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref igwVPC0
+  # 트랜짓 게이트웨이 라우팅 테이블에 추가
+  # 10.0.0.0/8
+  PubRouteTransitGatewayVPC1:
+    Type: AWS::EC2::Route
+    DependsOn: TransitGatewayAttachment0 # 트랜짓게이트웨이 생성 후
+    Properties:
+      RouteTableId: !Ref PubRouteTable1VPC0
+      DestinationCidrBlock: 10.0.0.0/8
+      TransitGatewayId: !Ref TransitGateway
+
+  # VPC0 프라이빗 라우팅 테이블 연결
+  PrivRouteTable2VPC0:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC0
+      Tags:
+      - Key: Name
+        Value: PrivRouteTable2VPC0
+  SubnetRouteTableAssociation3VPC0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet1VPC0
+      RouteTableId: !Ref PrivRouteTable2VPC0
+  SubnetRouteTableAssociation4VPC0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet2VPC0
+      RouteTableId: !Ref PrivRouteTable2VPC0
+
+  # VPC1 라우팅 테이블(1~2)
+  PrivRouteTable12VPC1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+      - Key: Name
+        Value: PrivRouteTable1VPC1
+  SubnetRouteTableAssociation1VPC1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet1VPC1
+      RouteTableId: !Ref PrivRouteTable12VPC1
+  SubnetRouteTableAssociation2VPC1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet2VPC1
+      RouteTableId: !Ref PrivRouteTable12VPC1
+  # 트랜짓 게이트웨이 라우팅 테이블에 추가
+  # 10.0.0.0/8
+  PubRouteTransitGatewayVPC2:
+    Type: AWS::EC2::Route
+    DependsOn: TransitGatewayAttachment1 # 트랜짓게이트웨이 생성 후
+    Properties:
+      RouteTableId: !Ref PrivRouteTable12VPC1
+      DestinationCidrBlock: 10.0.0.0/8
+      TransitGatewayId: !Ref TransitGateway
+  
+  # VPC1 라우팅 테이블(3~4)
+  PrivRouteTable34VPC1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+      - Key: Name
+        Value: PrivRouteTable34VPC1
+  SubnetRouteTableAssociation3VPC1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet3VPC1
+      RouteTableId: !Ref PrivRouteTable34VPC1
+  SubnetRouteTableAssociation4VPC1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet4VPC1
+      RouteTableId: !Ref PrivRouteTable34VPC1
+
+  # VPC2 라우팅 테이블(1~2)
+  PrivRouteTable12VPC2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC2
+      Tags:
+      - Key: Name
+        Value: PrivRouteTable12VPC2
+  SubnetRouteTableAssociation1VPC2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet1VPC2
+      RouteTableId: !Ref PrivRouteTable12VPC2
+  SubnetRouteTableAssociation2VPC2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet2VPC2
+      RouteTableId: !Ref PrivRouteTable12VPC2
+  # 트랜짓 게이트웨이 라우팅 테이블에 추가
+  # 10.0.0.0/8
+  PubRouteTransitGatewayVPC3:
+    Type: AWS::EC2::Route
+    DependsOn: TransitGatewayAttachment2 # 트랜짓게이트웨이 생성 후
+    Properties:
+      RouteTableId: !Ref PrivRouteTable12VPC2
+      DestinationCidrBlock: 10.0.0.0/8
+      TransitGatewayId: !Ref TransitGateway
+  
+  # VPC2 라우팅 테이블(3~4)
+  PrivRouteTable34VPC2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC2
+      Tags:
+      - Key: Name
+        Value: PrivRouteTable34VPC2
+  SubnetRouteTableAssociation3VPC2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet3VPC2
+      RouteTableId: !Ref PrivRouteTable34VPC2
+  SubnetRouteTableAssociation4VPC2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivSubnet4VPC2
+      RouteTableId: !Ref PrivRouteTable34VPC2
+
+# https://docs.aws.amazon.com/ko_kr/vpc/latest/tgw/tgw-getting-started.html#step-add-routes
+# 1단계: Transit Gateway 생성 
+# - AWS::EC2::TransitGateway
+# 2단계: VPC를 Transit Gateway에 연결
+# - AWS::EC2::TransitGatewayAttachment
+# 3단계: Transit Gateway와 VPC 사이에 경로 추가
+# - AWS::EC2::TransitGatewayRouteTable
+# - AWS::EC2::TransitGatewayRoute
+# - AWS::EC2::TransitGatewayRouteTableAssociation
+# 4단계: Transit Gateway 테스트
+# 5단계: Transit Gateway 삭제
+  # 1단계: Transit Gateway 생성 
+  TransitGateway:
+    Type: "AWS::EC2::TransitGateway"
+    Properties:
+      AmazonSideAsn: 65000
+      Description: "TGW Route Integration Test"
+      AutoAcceptSharedAttachments: "disable"
+      DefaultRouteTableAssociation: "enable"
+      DnsSupport: "enable"
+      VpnEcmpSupport: "enable"
+      Tags:
+      - Key: Name
+        Value: TransitGateway
+  # 2단계: VPC를 Transit Gateway에 연결
+  TransitGatewayAttachment0:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      SubnetIds: 
+        - !Ref PrivSubnet1VPC0
+        - !Ref PrivSubnet2VPC0
+      TransitGatewayId: !Ref TransitGateway
+      VpcId: !Ref VPC0
+      Tags:
+      - Key: Name
+        Value: TransitGatewayAttachment0
+  TransitGatewayAttachment1:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      SubnetIds: 
+        - !Ref PrivSubnet3VPC1
+        - !Ref PrivSubnet4VPC1
+      TransitGatewayId: !Ref TransitGateway
+      VpcId: !Ref VPC1
+      Tags:
+      - Key: Name
+        Value: TransitGatewayAttachment1
+  TransitGatewayAttachment2:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      SubnetIds: 
+        - !Ref PrivSubnet3VPC2
+        - !Ref PrivSubnet4VPC2
+      TransitGatewayId: !Ref TransitGateway
+      VpcId: !Ref VPC2
+      Tags:
+      - Key: Name
+        Value: TransitGatewayAttachment2
+  # 3단계: Transit Gateway와 VPC 사이에 경로 추가
+  # 3-1: 라우팅 테이블 생성
+  TransitGatewayRouteTableDefault:
+    Type: AWS::EC2::TransitGatewayRouteTable
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: TransitGatewayRouteTableDefault
+      TransitGatewayId: !Ref TransitGateway
+  TransitGatewayRouteTableBlue:
+    Type: AWS::EC2::TransitGatewayRouteTable
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: TransitGatewayRouteTableBlue
+      TransitGatewayId: !Ref TransitGateway
+  TransitGatewayRouteTableRed:
+    Type: AWS::EC2::TransitGatewayRouteTable
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: TransitGatewayRouteTableRed
+      TransitGatewayId: !Ref TransitGateway
+  # 3-2 경로 추가
+  TransitGatewayRoute1Default:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties:       
+      DestinationCidrBlock: 10.0.0.0/16
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment0
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableDefault
+  TransitGatewayRoute2Default:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: 10.10.0.0/16
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment0
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableDefault
+  TransitGatewayRoute3Default:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: 10.20.0.0/16
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment0
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableDefault
+  TransitGatewayRoute4Default:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      Blackhole: true
+      DestinationCidrBlock: 10.20.2.0/24
+      # TransitGatewayAttachmentId: !Ref TransitGatewayAttachment0
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableDefault
+
+  TransitGatewayRoute1Blue:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: 10.0.0.0/16
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment1
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableBlue
+  TransitGatewayRoute2Blue:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: 10.10.0.0/16
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment1
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableBlue
+
+  TransitGatewayRoute1Red:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: 10.0.0.0/16
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment2
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableRed
+  TransitGatewayRoute2Red:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: 10.10.0.0/16
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment2
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableRed
+
+# 3-3
+  TransitGatewayRoute1DefaultAssociation:
+    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment0
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableDefault
+  TransitGatewayRoute1BlueAssociation:
+    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment1
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableBlue
+  TransitGatewayRoute1RedAssociation:
+    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref TransitGatewayAttachment2
+      TransitGatewayRouteTableId: !Ref TransitGatewayRouteTableRed
+# VPC endpoint
+  Endpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      VpcEndpointType: 'Interface'
+      ServiceName: 'com.amazonaws.ap-northeast-2.cloudformation'
+      VpcId: !Ref VPC0
+      SubnetIds: 
+        - !Ref PubSubnet1VPC0
+        - !Ref PubSubnet2VPC0
+      SecurityGroupIds:
+        - !Ref sg2VPC0
+# 보안그룹 4개 생성
+  sg1VPC0:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALLOW SSH, HTTP/S, ICMP, 3128
+      VpcId: !Ref VPC0
+      Tags:
+      - Key: Name
+        Value: sg1VPC0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3128
+          ToPort: 3128
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+  sg2VPC0:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALLOW SSH, HTTP/S, ICMP
+      VpcId: !Ref VPC0
+      Tags:
+      - Key: Name
+        Value: sg2VPC0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+  sgVPC1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALLOW SSH, ICMP
+      VpcId: !Ref VPC1
+      Tags:
+      - Key: Name
+        Value: sgVPC1
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+  sgVPC2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALLOW SSH, ICMP
+      VpcId: !Ref VPC2
+      Tags:
+      - Key: Name
+        Value: sgVPC2
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+# 인스턴스 5개 생성
+  instance1VPC0:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: instance1VPC0
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.0.1.10
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sg1VPC0
+          SubnetId: !Ref PubSubnet1VPC0
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+  instance1VPC1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: instance1VPC1
+      NetworkInterfaces:
+        # - AssociatePublicIpAddress: true
+        - PrivateIpAddress: 10.10.1.10
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sgVPC1
+          SubnetId: !Ref PrivSubnet1VPC1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+  instance2VPC1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: instance2VPC1
+      NetworkInterfaces:
+        - PrivateIpAddress: 10.10.2.10
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sgVPC1
+          SubnetId: !Ref PrivSubnet2VPC1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+
+  instance1VPC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: instance1VPC2
+      NetworkInterfaces:
+        # - AssociatePublicIpAddress: true
+        - PrivateIpAddress: 10.20.1.10
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sgVPC2
+          SubnetId: !Ref PrivSubnet1VPC2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+  instance2VPC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: instance2VPC2
+      NetworkInterfaces:
+        - PrivateIpAddress: 10.20.2.10
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref sgVPC2
+          SubnetId: !Ref PrivSubnet2VPC2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd

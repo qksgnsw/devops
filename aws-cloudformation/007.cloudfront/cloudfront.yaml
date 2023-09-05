@@ -81,8 +81,8 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
-      ImageId: ami-01056eaaa603955a4 # 서울 AMI 
-      # ImageId: ami-03df3686945273422 # 상파울루 AMI 
+      # ImageId: ami-01056eaaa603955a4 # 서울 AMI 
+      ImageId: ami-03df3686945273422 # 상파울루 AMI 
       AvailabilityZone: !Select [ 0, !GetAZs '' ]
       Tags:
       - Key: Name

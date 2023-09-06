@@ -26,7 +26,7 @@ Resources:
       TrafficDialPercentage: 100
       EndpointConfigurations:
       - EndpointId: !Ref albArn
-  EndpointGroupSao1:
+  EndpointGroupSao:
     Type: AWS::GlobalAccelerator::EndpointGroup
     Properties:
       ListenerArn: !Ref Listener
@@ -34,14 +34,15 @@ Resources:
       TrafficDialPercentage: 100
       EndpointConfigurations:
       - EndpointId: !Ref EndpointId1
-  EndpointGroupSao2:
-    Type: AWS::GlobalAccelerator::EndpointGroup
-    Properties:
-      ListenerArn: !Ref Listener
-      EndpointGroupRegion: sa-east-1
-      TrafficDialPercentage: 100
-      EndpointConfigurations:
       - EndpointId: !Ref EndpointId2
+  # EndpointGroupSao2:
+  #   Type: AWS::GlobalAccelerator::EndpointGroup
+  #   Properties:
+  #     ListenerArn: !Ref Listener
+  #     EndpointGroupRegion: sa-east-1
+  #     TrafficDialPercentage: 100
+  #     EndpointConfigurations:
+  #     - EndpointId: !Ref EndpointId2
 
 Parameters:
   albArn: # arn:aws:elasticloadbalancing:ap-southeast-2:244516738903:loadbalancer/app/webserverALB/c95c775b36e299d2
@@ -54,3 +55,10 @@ Parameters:
   EndpointId2: # i-08ee5cb06a9671134
     Type: String
     Description: "this region must be sa-east-1. The format must start 'i-' because that's instance ID."
+
+Outputs:
+  StackAccelerator:
+    Description: StackAccelerator
+    Value: !Ref Accelerator
+    Export:
+      Name: StackAccelerator

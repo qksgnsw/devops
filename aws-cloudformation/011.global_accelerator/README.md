@@ -32,7 +32,8 @@
 - [Global Accelerator 사용자 설명서](https://docs.aws.amazon.com/ko_kr/global-accelerator/latest/dg/what-is-global-accelerator.html)
 
 
-# 02. Global Accelerator 실습 -> 서울리전은 생략한다.
+# 02. Global Accelerator 실습 
+서울리전은 생략한다. global_accelerator를 가장 마지막에 실행하며, 가장 먼저 삭제한다.
 
 ---
 

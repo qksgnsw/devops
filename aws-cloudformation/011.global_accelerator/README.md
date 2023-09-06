@@ -56,3 +56,13 @@
 - 서울 리전과 버지니어 리전(생략)
     
     ![Untitled](./global_accelerator6.png)
+
+## 나. 결과
+- 기본 서울에서 접속할 경우 시드니로 접속
+![](./result1.png)
+- 로드밸런서가 잡혀있으므로 분산이 되는 모습
+![](./result2.png)
+- 미국으로 VPN 잡고 접속시 상파울로로 접속
+![](./result3.png)
+- global accelerator자체에서 분산이 되는 모습
+![](./result4.png)

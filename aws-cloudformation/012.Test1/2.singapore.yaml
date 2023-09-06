@@ -1,0 +1,324 @@
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.3.0.0/16
+      Tags:
+      - Key: Name
+        Value: VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.3.1.0/24
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: PublicSubnet1
+  
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.3.2.0/24
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: PublicSubnet2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.3.3.0/24
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: PrivateSubnet1
+  
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.3.4.0/24
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: PrivateSubnet2
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+### 라우팅 테이블 설정
+# 1. 라우팅 테이블 생성
+# 2. 라우팅 정책 생성
+# 2-1. 생성된 정책을 라우팅 테이블에 적용
+# 3. 라우팅 테이블과 서브넷 연결
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: PublicRouteTable
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociationPub1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  SubnetRouteTableAssociationPub2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: PrivRouteTable
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    DependsOn: 
+      - AttachGateway
+      - PrivRouteTable
+      - BastionWithNAT1
+    Properties:
+      RouteTableId: !Ref PrivRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      # NAT instance의 eni 로 설정
+      # 로 해야하는데 InstanceId로 해도 됨. 왜지?
+      # NetworkInterfaceId: 
+      # GatewayId: !Ref InternetGateway
+      InstanceId: !Ref BastionWithNAT1
+
+  SubnetRouteTableAssociationPriv1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivRouteTable
+
+  SubnetRouteTableAssociationPriv2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivRouteTable
+
+########################
+#                      #
+#  전송 게이트 웨이        #
+#                      #
+########################
+  # 1단계: Transit Gateway 생성 
+  TGW1:
+    Type: "AWS::EC2::TransitGateway"
+    Properties:
+      AmazonSideAsn: 65000
+      Description: "TGW Route Integration Test"
+      AutoAcceptSharedAttachments: "disable"
+      DefaultRouteTableAssociation: "enable"
+      DnsSupport: "enable"
+      VpnEcmpSupport: "enable"
+      Tags:
+      - Key: Name
+        Value: TGW1
+  VPCTransitGatewayAttachment:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties: 
+      Options:
+        DnsSupport: "enable"
+      SubnetIds: 
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      TransitGatewayId: !Ref TGW1
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: VPCTransitGatewayAttachment
+  # 3단계: Transit Gateway와 VPC 사이에 경로 추가
+  # 3-1: 라우팅 테이블 생성
+  DefaultTransitGatewayRouteTable:
+    Type: AWS::EC2::TransitGatewayRouteTable
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: DefaultTransitGatewayRouteTable
+      TransitGatewayId: !Ref TGW1
+  # 3-3 라우팅 테이블 연결
+  TransitGatewayRoute1DefaultAssociation:
+    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref VPCTransitGatewayAttachment
+      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable  
+  # 3-4 라우팅 테이블 전파 
+  TransitGatewayRoute1DefaultPropagation:
+    Type: AWS::EC2::TransitGatewayRouteTablePropagation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref VPCTransitGatewayAttachment
+      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+
+
+
+
+### 보안 그룹 생성
+  # 모든 트래픽 허용
+  SGBastionWithNAT:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Group
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: SGBastionWithNAT
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: -1  # All protocols
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: -1  # All protocols
+
+  SGEC2:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Group
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: SGEC2
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+
+# EC2 생성
+# 1. NAT instance 생성
+  BastionWithNAT1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0e047ce9149262f82
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      SourceDestCheck: false # NAT Instance의 경우 반드시 false로 설정
+      Tags:
+      - Key: Name
+        Value: BastionWithNAT1
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.3.1.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref SGBastionWithNAT
+          SubnetId: !Ref PublicSubnet1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # echo "password!" | passwd --stdin root
+          # sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          # sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          # systemctl restart sshd
+          sudo yum update -y
+          sudo yum install -y httpd.x86_64
+          sudo systemctl start httpd.service
+          sudo systemctl enable httpd.service
+          sudo echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+          sudo echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+          sudo sysctl -p /etc/sysctl.conf
+          sudo yum install -y iptables-services
+          sudo systemctl start iptables
+          sudo systemctl enable iptables
+          sudo iptables -F
+          sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+          sudo service iptables save
+
+  EC2InstanceWeb1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0e047ce9149262f82
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: EC2InstanceWeb1
+      NetworkInterfaces:
+        - PrivateIpAddress: 10.3.3.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref SGEC2
+          SubnetId: !Ref PrivateSubnet1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+  
+  EC2InstanceWeb2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0e047ce9149262f82
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: EC2InstanceWeb2
+      NetworkInterfaces:
+        - PrivateIpAddress: 10.3.4.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref SGEC2
+          SubnetId: !Ref PrivateSubnet2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html

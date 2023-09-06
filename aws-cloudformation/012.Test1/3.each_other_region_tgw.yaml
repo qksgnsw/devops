@@ -1,0 +1,23 @@
+# 0. tgw 생성
+# AWS::EC2::TransitGateway
+
+# 1. tgw 연결
+# AWS::EC2::TransitGatewayAttachment
+# 1-1. 본인 tgwid
+# 1-2. 연결유형: peering connection
+# 1-3. 리전 선택
+# 1-4. 해당 리전 tgw id
+# 상대방의 수락에 대한 옵션이 필요할 듯.
+
+# 2. 라우팅 테이블 생성
+# AWS::EC2::TransitGatewayRouteTable
+
+# 3. 라우팅 테이블 연결
+# AWS::EC2::TransitGatewayRouteTableAssociation
+
+# 4. 라우팅 테이블에 정적 경로 추가
+# AWS::EC2::TransitGatewayRoute
+
+# 5. 기존 라우팅 테이블에 해당 경로 추가
+# AWS::EC2::Route
+# TransitGatewayId

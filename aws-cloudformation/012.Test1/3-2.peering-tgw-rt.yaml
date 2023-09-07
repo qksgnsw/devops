@@ -1,0 +1,39 @@
+Resources:
+  connectRT:
+    Type: AWS::EC2::TransitGatewayRouteTableAssociation
+    Properties: 
+      TransitGatewayAttachmentId: !Ref peering
+      TransitGatewayRouteTableId: !Ref defaultTGWRT
+  addStaticRoute:
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: !Ref DestinationCidrBlock
+      TransitGatewayAttachmentId: !Ref peering
+      TransitGatewayRouteTableId: !Ref defaultTGWRT
+  addStaticRouteToTable:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTableId
+      DestinationCidrBlock: !Ref DestinationCidrBlock
+      TransitGatewayId: !Ref mytgw
+
+Parameters:
+  mytgw:
+    Description: "Here is my tgw id."
+    Type: String
+    AllowedPattern: "tgw-.*"
+  defaultTGWRT:
+    Description: "Here is my tgw route table id."
+    Type: String
+    AllowedPattern: "tgw-rtb-.*"
+  peering:
+    Description: "Here is peering attach id."
+    Type: String
+    AllowedPattern: "tgw-attach-.*"
+  RouteTableId:
+    Description: "Here is my route table id."
+    Type: String
+    AllowedPattern: "rtb-.*"
+  DestinationCidrBlock:
+    Description: "Here is Destination CidrBlock."
+    Type: String

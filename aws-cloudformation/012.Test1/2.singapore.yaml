@@ -1,3 +1,5 @@
+# transit gateway까지 만든다.
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -134,7 +136,7 @@ Resources:
 #                      #
 ########################
   # 1단계: Transit Gateway 생성 
-  TGW1:
+  tgw:
     Type: "AWS::EC2::TransitGateway"
     Properties:
       AmazonSideAsn: 65000
@@ -145,7 +147,7 @@ Resources:
       VpnEcmpSupport: "enable"
       Tags:
       - Key: Name
-        Value: TGW1
+        Value: tgw
   VPCTransitGatewayAttachment:
     Type: AWS::EC2::TransitGatewayAttachment
     Properties: 
@@ -154,32 +156,26 @@ Resources:
       SubnetIds: 
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
-      TransitGatewayId: !Ref TGW1
+      TransitGatewayId: !Ref tgw
       VpcId: !Ref VPC
       Tags:
       - Key: Name
         Value: VPCTransitGatewayAttachment
-  # 3단계: Transit Gateway와 VPC 사이에 경로 추가
-  # 3-1: 라우팅 테이블 생성
-  DefaultTransitGatewayRouteTable:
-    Type: AWS::EC2::TransitGatewayRouteTable
-    Properties: 
-      Tags: 
-        - Key: Name
-          Value: DefaultTransitGatewayRouteTable
-      TransitGatewayId: !Ref TGW1
-  # 3-3 라우팅 테이블 연결
-  TransitGatewayRoute1DefaultAssociation:
-    Type: AWS::EC2::TransitGatewayRouteTableAssociation
-    Properties: 
-      TransitGatewayAttachmentId: !Ref VPCTransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable  
-  # 3-4 라우팅 테이블 전파 
-  TransitGatewayRoute1DefaultPropagation:
-    Type: AWS::EC2::TransitGatewayRouteTablePropagation
-    Properties: 
-      TransitGatewayAttachmentId: !Ref VPCTransitGatewayAttachment
-      TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable
+  # # 3단계: Transit Gateway와 VPC 사이에 경로 추가
+  # # 3-1: 라우팅 테이블 생성
+  # DefaultTransitGatewayRouteTable:
+  #   Type: AWS::EC2::TransitGatewayRouteTable
+  #   Properties: 
+  #     Tags: 
+  #       - Key: Name
+  #         Value: DefaultTransitGatewayRouteTable
+  #     TransitGatewayId: !Ref TGW1
+  # # 3-3 라우팅 테이블 연결
+  # TransitGatewayRoute1DefaultAssociation:
+  #   Type: AWS::EC2::TransitGatewayRouteTableAssociation
+  #   Properties: 
+  #     TransitGatewayAttachmentId: !Ref VPCTransitGatewayAttachment
+  #     TransitGatewayRouteTableId: !Ref DefaultTransitGatewayRouteTable  
 
 
 

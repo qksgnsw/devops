@@ -1,0 +1,27 @@
+Resources:
+  peering:
+    Type: AWS::EC2::TransitGatewayPeeringAttachment
+    Properties: 
+      PeerAccountId: !Ref PeerAccountId
+      PeerRegion: !Ref PeerRegion
+      PeerTransitGatewayId: !Ref PeerTransitGatewayId
+      Tags: 
+        - Key: Name
+          Value: Seoul-peer-Singapore
+      TransitGatewayId: !Ref TransitGatewayId
+
+Parameters:
+  TransitGatewayId:
+    Description: "Here is my tgw id."
+    Type: String
+    AllowedPattern: "tgw-.*"
+  PeerTransitGatewayId:
+    Description: "Here is peer tgw id."
+    Type: String
+    AllowedPattern: "tgw-.*"
+  PeerAccountId:
+    Description: "Here is peer Account ID."
+    Type: String
+  PeerRegion:
+    Description: "Here is Region to Peer with."
+    Type: String

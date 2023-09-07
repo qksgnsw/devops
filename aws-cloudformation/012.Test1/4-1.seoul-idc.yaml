@@ -265,13 +265,22 @@ Resources:
       VpnConnectionId: !Ref VPNConnection
 
 # 10.1.0.0/16 대역 설정
-  PubVPNRouteAWS2:
+  PubVPNRouteAWS1:
     Type: AWS::EC2::Route
     DependsOn: 
     - VPNGateway
     - VPNConnection
     Properties:
       RouteTableId: !Ref PubRTAWS
+      DestinationCidrBlock: 10.2.0.0/16
+      GatewayId: !Ref VPNGateway
+  PrivVPNRouteAWS1:
+    Type: AWS::EC2::Route
+    DependsOn: 
+    - VPNGateway
+    - VPNConnection
+    Properties:
+      RouteTableId: !Ref PrivRTAWS
       DestinationCidrBlock: 10.2.0.0/16
       GatewayId: !Ref VPNGateway
 
@@ -282,5 +291,9 @@ Parameters:
     AllowedPattern: "vpc-.*"
   PubRTAWS:
     Description: "Here is my public route table id."
+    Type: String
+    AllowedPattern: "rtb-.*"
+  PrivRTAWS:
+    Description: "Here is my private route table id."
     Type: String
     AllowedPattern: "rtb-.*"

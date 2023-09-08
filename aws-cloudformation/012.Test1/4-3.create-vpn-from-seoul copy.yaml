@@ -1,0 +1,22 @@
+Resources:
+  # AWS::EC2::VPNConnection : VPN 연결 만들기
+  VPNConnection: 
+    Type: AWS::EC2::VPNConnection
+    Properties: 
+      Type: ipsec.1
+      StaticRoutesOnly: true
+      CustomerGatewayId: !Ref CustomerGateway
+      TransitGatewayId: !Ref mytgw
+      Tags:
+        - Key: Name
+          Value: VPNConnection
+
+Parameters:
+  mytgw:
+    Description: "Here is my tgw id."
+    Type: String
+    AllowedPattern: "tgw-.*"
+  CustomerGateway:
+    Description: "Here is CustomerGateway."
+    Type: String
+    AllowedPattern: "cgw-.*"

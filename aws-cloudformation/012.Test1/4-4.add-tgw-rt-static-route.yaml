@@ -1,0 +1,20 @@
+Resources:
+  TransitGatewayRoute: 
+    Type: AWS::EC2::TransitGatewayRoute
+    Properties: 
+      DestinationCidrBlock: !Ref cidr
+      TransitGatewayAttachmentId: !Ref tgwAttachVpn
+      TransitGatewayRouteTableId: !Ref tgwDefaultRT
+
+Parameters:
+  cidr:
+    Description: "Here is cidr."
+    Type: String
+  tgwAttachVpn:
+    Description: "Here is my tgw attach id."
+    Type: String
+    AllowedPattern: "tgw-attach-.*"
+  tgwDefaultRT:
+    Description: "Here is tgw route table id."
+    Type: String
+    AllowedPattern: "tgw-rtb-.*"

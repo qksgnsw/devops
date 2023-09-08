@@ -422,3 +422,8 @@ Resources:
       LoadBalancerArn: !Ref ALB
       Port: 80
       Protocol: HTTP
+
+Outputs:
+  TransitGatewayId:
+    Description: my transit gateway id.
+    Value: !Ref tgw

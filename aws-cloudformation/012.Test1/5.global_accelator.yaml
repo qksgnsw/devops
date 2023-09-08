@@ -1,0 +1,58 @@
+Description: "This template must run from Region that us-west-2 because that's Global accelerator."
+
+Resources:
+  Accelerator:
+    Type: AWS::GlobalAccelerator::Accelerator
+    Properties:
+      Name: GA
+      Tags:
+        - Key: Name
+          Value: GA
+
+  Listener:
+    Type: AWS::GlobalAccelerator::Listener
+    Properties:
+      AcceleratorArn: !Ref Accelerator
+      Protocol: TCP
+      PortRanges:
+      - FromPort: 80
+        ToPort: 80
+
+  EndpointGroupALB:
+    Type: AWS::GlobalAccelerator::EndpointGroup
+    Properties:
+      ListenerArn: !Ref Listener
+      EndpointGroupRegion: !Ref RegionOfEndpointIdForALB
+      TrafficDialPercentage: 100
+      EndpointConfigurations:
+      - EndpointId: !Ref EndpointIdForAlbArn
+
+  EndpointGroupInstance:
+    Type: AWS::GlobalAccelerator::EndpointGroup
+    Properties:
+      ListenerArn: !Ref Listener
+      EndpointGroupRegion: !Ref RegionOfEndpointIdForInstance
+      TrafficDialPercentage: 100
+      EndpointConfigurations:
+      - EndpointId: !Ref EndpointIdForInstance
+
+Parameters:
+  EndpointIdForAlbArn: 
+    Type: String
+    Description: "The format must start arn."
+    AllowedPattern: "arn:aws:elasticloadbalancing:.*"
+  EndpointIdForInstance: 
+    Type: String
+    Description: "The format must start 'i-' because that's instance ID."
+    AllowedPattern: "i-.*"
+  RegionOfEndpointIdForInstance: 
+    Type: String
+  RegionOfEndpointIdForALB: 
+    Type: String
+
+Outputs:
+  StackAccelerator:
+    Description: StackAccelerator
+    Value: !Ref Accelerator
+    Export:
+      Name: StackAccelerator

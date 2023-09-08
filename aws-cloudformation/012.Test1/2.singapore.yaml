@@ -318,3 +318,8 @@ Resources:
           systemctl start httpd.service
           systemctl enable httpd.service
           echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+
+Outputs:
+  TransitGatewayId:
+    Description: peer transit gateway id.
+    Value: !Ref tgw

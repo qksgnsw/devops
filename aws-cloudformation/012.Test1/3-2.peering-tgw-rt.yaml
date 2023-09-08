@@ -1,3 +1,5 @@
+Description: You must set from all region after must accept.
+
 Resources:
   connectRT:
     Type: AWS::EC2::TransitGatewayRouteTableAssociation

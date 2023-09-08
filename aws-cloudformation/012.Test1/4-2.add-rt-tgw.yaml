@@ -1,0 +1,22 @@
+Description: You must set from all region.
+
+Resources:
+  PubVPNRouteAWS1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PubRTAWS
+      DestinationCidrBlock: !Ref DestinationCidrBlock
+      TransitGatewayId: !Ref mytgw
+
+Parameters:
+  DestinationCidrBlock:
+    Description: "Here is DestinationCidrBlock."
+    Type: String
+  PubRTAWS:
+    Description: "Here is my public route table id."
+    Type: String
+    AllowedPattern: "rtb-.*"
+  mytgw:
+    Description: "Here is my tgw id."
+    Type: String
+    AllowedPattern: "tgw-.*"

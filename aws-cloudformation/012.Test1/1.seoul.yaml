@@ -303,63 +303,132 @@ Resources:
           sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
           sudo service iptables save
 
-  EC2InstanceWeb1:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      ImageId: ami-01056eaaa603955a4
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
-      Tags:
-      - Key: Name
-        Value: EC2InstanceWeb1
-      NetworkInterfaces:
-        - PrivateIpAddress: 10.1.3.100
-          DeviceIndex: 0
-          GroupSet:
-            - !Ref SGEC2
-          SubnetId: !Ref PrivateSubnet1
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          echo "password!" | passwd --stdin root
-          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-          systemctl restart sshd
-          yum update -y
-          yum install -y httpd.x86_64
-          systemctl start httpd.service
-          systemctl enable httpd.service
-          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+  # EC2InstanceWeb1:
+  #   Type: AWS::EC2::Instance
+  #   Properties:
+  #     InstanceType: t2.micro
+  #     ImageId: ami-01056eaaa603955a4
+  #     AvailabilityZone: !Select [ 0, !GetAZs '' ]
+  #     Tags:
+  #     - Key: Name
+  #       Value: EC2InstanceWeb1
+  #     NetworkInterfaces:
+  #       - PrivateIpAddress: 10.1.3.100
+  #         DeviceIndex: 0
+  #         GroupSet:
+  #           - !Ref SGEC2
+  #         SubnetId: !Ref PrivateSubnet1
+  #     UserData:
+  #       Fn::Base64: !Sub |
+  #         #!/bin/bash
+  #         echo "password!" | passwd --stdin root
+  #         sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+  #         sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+  #         systemctl restart sshd
+  #         yum update -y
+  #         yum install -y httpd.x86_64
+  #         systemctl start httpd.service
+  #         systemctl enable httpd.service
+  #         echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
   
-  EC2InstanceWeb2:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      ImageId: ami-01056eaaa603955a4
-      AvailabilityZone: !Select [ 2, !GetAZs '' ]
-      Tags:
-      - Key: Name
-        Value: EC2InstanceWeb2
-      NetworkInterfaces:
-        - PrivateIpAddress: 10.1.4.100
-          DeviceIndex: 0
-          GroupSet:
-            - !Ref SGEC2
-          SubnetId: !Ref PrivateSubnet2
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          echo "password!" | passwd --stdin root
-          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-          systemctl restart sshd
-          yum update -y
-          yum install -y httpd.x86_64
-          systemctl start httpd.service
-          systemctl enable httpd.service
-          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+  # EC2InstanceWeb2:
+  #   Type: AWS::EC2::Instance
+  #   Properties:
+  #     InstanceType: t2.micro
+  #     ImageId: ami-01056eaaa603955a4
+  #     AvailabilityZone: !Select [ 2, !GetAZs '' ]
+  #     Tags:
+  #     - Key: Name
+  #       Value: EC2InstanceWeb2
+  #     NetworkInterfaces:
+  #       - PrivateIpAddress: 10.1.4.100
+  #         DeviceIndex: 0
+  #         GroupSet:
+  #           - !Ref SGEC2
+  #         SubnetId: !Ref PrivateSubnet2
+  #     UserData:
+  #       Fn::Base64: !Sub |
+  #         #!/bin/bash
+  #         echo "password!" | passwd --stdin root
+  #         sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+  #         sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+  #         systemctl restart sshd
+  #         yum update -y
+  #         yum install -y httpd.x86_64
+  #         systemctl start httpd.service
+  #         systemctl enable httpd.service
+  #         echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
 
-# ALB 생성하기
+# # ALB 생성하기
+#   ALBSecurityGroup:
+#     Type: AWS::EC2::SecurityGroup
+#     Properties:
+#       GroupDescription: EC2 Security Group
+#       VpcId: !Ref VPC
+#       Tags:
+#       - Key: Name
+#         Value: ALBSecurityGroup
+#       SecurityGroupIngress:
+#         - IpProtocol: tcp
+#           FromPort: 80
+#           ToPort: 80
+#           CidrIp: 0.0.0.0/0
+#         - IpProtocol: tcp
+#           FromPort: 443
+#           ToPort: 443
+#           CidrIp: 0.0.0.0/0
+#         - IpProtocol: icmp
+#           FromPort: -1
+#           ToPort: -1
+#           CidrIp: 0.0.0.0/0
+#   ALB:
+#     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+#     Properties:
+#       Name: ALB
+#       Type: application
+#       SecurityGroups:
+#         - !Ref ALBSecurityGroup
+#       # internet-facing 타입이므로
+#       # 인터넷이 가능한 서브넷을 연결해주어야 한다.
+#       Subnets:
+#         - !Ref PublicSubnet1
+#         - !Ref PublicSubnet2
+
+#   TargetGroup:
+#     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+#     Properties:
+#       VpcId: !Ref VPC
+#       Name: AutoScailingEC2
+#       Port: 80
+#       Protocol: HTTP
+#       HealthCheckEnabled: true
+#       HealthCheckIntervalSeconds: 10
+#       HealthCheckPath: /
+#       HealthCheckProtocol: HTTP
+#       HealthCheckTimeoutSeconds: 5
+#       HealthyThresholdCount: 2
+#       UnhealthyThresholdCount: 2
+#       Targets:
+#         - Id: !Ref EC2InstanceWeb1
+#         - Id: !Ref EC2InstanceWeb2
+#       TargetType: instance
+
+#   ALBListener:
+#     Type: AWS::ElasticLoadBalancingV2::Listener
+#     Properties:
+#       DefaultActions:
+#         - Type: forward
+#           TargetGroupArn: !Ref TargetGroup   
+#       LoadBalancerArn: !Ref ALB
+#       Port: 80
+#       Protocol: HTTP
+
+# Outputs:
+#   TransitGatewayId:
+#     Description: my transit gateway id.
+#     Value: !Ref tgw
+
+###### Auto Scailing 작업 시작
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -381,15 +450,43 @@ Resources:
           FromPort: -1
           ToPort: -1
           CidrIp: 0.0.0.0/0
+  
+# 1. 오토스케일링으로 만들어질 ec2들 설정
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateName: !Sub '${AWS::StackName}-launch-template-for-auto-scaling'
+      LaunchTemplateData:
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            # AssociatePublicIpAddress: true
+            Groups:
+              - !Ref SGEC2
+            DeleteOnTermination: true
+        Placement:
+          Tenancy: default
+        ImageId: ami-01056eaaa603955a4
+        InstanceType: t2.micro
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            echo "password!" | passwd --stdin root
+            sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+            sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+            systemctl restart sshd
+            yum update -y
+            yum install -y httpd.x86_64
+            systemctl start httpd.service
+            systemctl enable httpd.service
+            echo "<h1>Hello World from $(hostname -f): AUTO SCAILNG INSTANCE."</h1> > /var/www/html/index.html
+# 2. ALB 설정
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: ALB
+      Name: webserverALB
       Type: application
       SecurityGroups:
         - !Ref ALBSecurityGroup
-      # internet-facing 타입이므로
-      # 인터넷이 가능한 서브넷을 연결해주어야 한다.
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
@@ -408,10 +505,6 @@ Resources:
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 2
-      Targets:
-        - Id: !Ref EC2InstanceWeb1
-        - Id: !Ref EC2InstanceWeb2
-      TargetType: instance
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -423,7 +516,34 @@ Resources:
       Port: 80
       Protocol: HTTP
 
-Outputs:
-  TransitGatewayId:
-    Description: my transit gateway id.
-    Value: !Ref tgw
+# 3. Auto Scailing Group 설정
+  ASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Cooldown: 10
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MaxSize: 2
+      MinSize: 1
+      DesiredCapacity: 2
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      Tags:
+        - Key: Name
+          Value: ASG
+          PropagateAtLaunch: true
+
+  ASGPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref ASG
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+        # ALBRequestCountPerTarget | ASGAverageCPUUtilization | ASGAverageNetworkIn | ASGAverageNetworkOut
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 5

@@ -478,7 +478,7 @@ Resources:
             yum install -y httpd.x86_64
             systemctl start httpd.service
             systemctl enable httpd.service
-            echo "<h1>Hello World from $(hostname -f): AUTO SCAILNG INSTANCE."</h1> > /var/www/html/index.html
+            echo "<h1>Hello World from $(hostname -f): AUTO SCAILNG INSTANCE.</h1>" > /var/www/html/index.html
 # 2. ALB 설정
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -547,3 +547,17 @@ Resources:
         # ALBRequestCountPerTarget | ASGAverageCPUUtilization | ASGAverageNetworkIn | ASGAverageNetworkOut
           PredefinedMetricType: ASGAverageCPUUtilization
         TargetValue: 5
+
+Outputs:
+  TransitGatewayId:
+    Description: my transit gateway id.
+    Value: !Ref tgw
+  VPCID:
+    Description: my VPC id.
+    Value: !Ref VPC
+  PublicRouteTable:
+    Description: my PublicRouteTable id.
+    Value: !Ref PublicRouteTable
+  albArn:
+    Description: my PublicRouteTable id.
+    Value: !Ref ALB

@@ -41,6 +41,15 @@
       3. 터널이 제대로 up 되는지 확인해야함
       4. 터널2는 안해봄
       5. 구성 시 리모트 대역은 축약하여 사용 함.
+      6. ```
+      /etc/sysctl.conf
+      sysctl -p
+      /etc/ipsec.conf
+      /etc/ipsec.d/aws.conf
+      /etc/ipsec.d/aws.secrets
+      ipsec start
+      systemctl enable ipsec.service
+      ```
    4. 4-4번 파일로 위에서 만들어진 tgw attach를 바탕으로 해당 경로를 정적경로로 라우팅 테이블에 등록
       1. 어느 정도 시간이 필요하고
       2. 핑 테스트하면 아래와 같이 네트워킹이 가능함.

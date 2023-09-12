@@ -50,6 +50,8 @@
       /etc/ipsec.d/aws.secrets
       ipsec start
       systemctl enable ipsec.service
+      systemctl status ipsec.service
+      journalctl -xefu ipsec.service
       ```
    4. 4-4번 파일로 위에서 만들어진 tgw attach를 바탕으로 해당 경로를 정적경로로 라우팅 테이블에 등록
       1. 어느 정도 시간이 필요하고

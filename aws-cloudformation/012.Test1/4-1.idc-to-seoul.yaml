@@ -83,7 +83,7 @@ Resources:
       - CGWIDC
     Properties:
       RouteTableId: !Ref PrivRTIDC
-      DestinationCidrBlock: 10.1.0.0/16
+      DestinationCidrBlock: 0.0.0.0/0
       InstanceId: !Ref CGWIDC
     
   # 보안 그룹 생성
@@ -165,6 +165,13 @@ Resources:
           sudo systemctl start httpd.service
           sudo systemctl enable httpd.service
           sudo echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+          # iptable
+          sudo yum install -y iptables-services
+          sudo systemctl start iptables
+          sudo systemctl enable iptables
+          sudo iptables -F
+          sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+          sudo service iptables save
           # openswan 
           sudo yum install -y openswan
           sudo echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
@@ -173,13 +180,6 @@ Resources:
           sudo echo "net.ipv4.conf.all.accept_redirects = 0" >> /etc/sysctl.conf
           sudo echo "net.ipv4.conf.all.send_redirects = 0" >> /etc/sysctl.conf
           sudo sysctl -p /etc/sysctl.conf
-          # iptable
-          # sudo yum install -y iptables-services
-          # sudo systemctl start iptables
-          # sudo systemctl enable iptables
-          # sudo iptables -F
-          # sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-          # sudo service iptables save
           # echo "password!" | passwd --stdin root
           # sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
           # sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config

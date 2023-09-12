@@ -159,31 +159,35 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+          
           # apache
-          sudo yum update -y
-          sudo yum install -y httpd.x86_64
-          sudo systemctl start httpd.service
-          sudo systemctl enable httpd.service
-          sudo echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "Hello World from $(hostname -f)" > /var/www/html/index.html
+
           # iptable
-          sudo yum install -y iptables-services
-          sudo systemctl start iptables
-          sudo systemctl enable iptables
-          sudo iptables -F
-          sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-          sudo service iptables save
+          yum install -y iptables-services
+          systemctl start iptables
+          systemctl enable iptables
+          iptables -F
+          iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+          service iptables save
+
           # openswan 
-          sudo yum install -y openswan
-          sudo echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
-          sudo echo "net.ipv4.conf.default.rp_filter = 0" >> /etc/sysctl.conf
-          sudo echo "net.ipv4.conf.default.accept_source_route = 0" >> /etc/sysctl.conf
-          sudo echo "net.ipv4.conf.all.accept_redirects = 0" >> /etc/sysctl.conf
-          sudo echo "net.ipv4.conf.all.send_redirects = 0" >> /etc/sysctl.conf
-          sudo sysctl -p /etc/sysctl.conf
-          # echo "password!" | passwd --stdin root
-          # sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-          # sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-          # systemctl restart sshd
+          yum install -y openswan
+          echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+          echo "net.ipv4.conf.default.rp_filter = 0" >> /etc/sysctl.conf
+          echo "net.ipv4.conf.default.accept_source_route = 0" >> /etc/sysctl.conf
+          echo "net.ipv4.conf.all.accept_redirects = 0" >> /etc/sysctl.conf
+          echo "net.ipv4.conf.all.send_redirects = 0" >> /etc/sysctl.conf
+          sysctl -p /etc/sysctl.conf
+          
 
   EC2IDC:
     Type: AWS::EC2::Instance

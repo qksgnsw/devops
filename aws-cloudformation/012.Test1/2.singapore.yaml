@@ -5,6 +5,8 @@ Resources:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.3.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
       Tags:
       - Key: Name
         Value: VPC
@@ -245,23 +247,27 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          # echo "password!" | passwd --stdin root
-          # sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
-          # sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
-          # systemctl restart sshd
-          sudo yum update -y
-          sudo yum install -y httpd.x86_64
-          sudo systemctl start httpd.service
-          sudo systemctl enable httpd.service
-          sudo echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
-          sudo echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-          sudo sysctl -p /etc/sysctl.conf
-          sudo yum install -y iptables-services
-          sudo systemctl start iptables
-          sudo systemctl enable iptables
-          sudo iptables -F
-          sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-          sudo service iptables save
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+
+          echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+          echo "net.ipv4.conf.eth0.send_redirects=0" >> /etc/sysctl.conf
+          sysctl -p /etc/sysctl.conf
+          
+          yum install -y iptables-services
+          systemctl start iptables
+          systemctl enable iptables
+          iptables -F
+          iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+          service iptables save
 
   EC2InstanceWeb1:
     Type: AWS::EC2::Instance
@@ -285,6 +291,7 @@ Resources:
           sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
           sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
           systemctl restart sshd
+
           yum update -y
           yum install -y httpd.x86_64
           systemctl start httpd.service
@@ -313,6 +320,7 @@ Resources:
           sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
           sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
           systemctl restart sshd
+          
           yum update -y
           yum install -y httpd.x86_64
           systemctl start httpd.service

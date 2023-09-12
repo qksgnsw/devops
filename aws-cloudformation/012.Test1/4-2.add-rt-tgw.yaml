@@ -4,7 +4,7 @@ Resources:
   PubVPNRouteAWS1:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref PubRTAWS
+      RouteTableId: !Ref RouteTableId
       DestinationCidrBlock: !Ref DestinationCidrBlock
       TransitGatewayId: !Ref mytgw
 
@@ -12,8 +12,8 @@ Parameters:
   DestinationCidrBlock:
     Description: "Here is DestinationCidrBlock."
     Type: String
-  PubRTAWS:
-    Description: "Here is my public route table id."
+  RouteTableId:
+    Description: "Here is my route table id."
     Type: String
     AllowedPattern: "rtb-.*"
   mytgw:

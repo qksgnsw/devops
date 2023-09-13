@@ -1,0 +1,168 @@
+Resources:
+  VPC1:
+    Type: AWS::EC2::VPC
+    Properties:
+     CidrBlock: 10.0.0.0/16
+     EnableDnsSupport: true
+     EnableDnsHostnames: true
+     Tags:
+      - Key: Name
+        Value: VPC1
+  VPC1IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: VPC1-IGW
+
+  VPC1IGWAtt:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref VPC1IGW
+      VpcId: !Ref VPC1
+
+  VPC1PubSN1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: True
+      Tags:
+        - Key: Name
+          Value: VPC1-Pub-SN1
+
+  VPC1PubSN2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC1
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: True
+      Tags:
+        - Key: Name
+          Value: VPC1-Pub-SN2
+
+  VPC1PubRT1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC1
+      Tags:
+        - Key: Name
+          Value: VPC1-Pub-RT1
+
+  VPC1PubSN1RT1Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1PubRT1
+      SubnetId: !Ref VPC1PubSN1
+
+  VPC1PubSN2RT1Ass:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref VPC1PubRT1
+      SubnetId: !Ref VPC1PubSN2
+
+  VPC1PubRT1Route1:
+    Type: AWS::EC2::Route
+    DependsOn: VPC1IGWAtt
+    Properties:
+      RouteTableId: !Ref VPC1PubRT1
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref VPC1IGW
+
+  VPC1SG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC1
+      GroupDescription: VPC1-SG
+      Tags:
+      - Key : Name
+        Value : VPC1-SG
+      SecurityGroupIngress:
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+
+  DVWAEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-01056eaaa603955a4
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: DVWAEC2
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref VPC1SG
+          SubnetId: !Ref VPC1PubSN1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+
+          yum update -y
+          yum install -y httpd mariadb-server mariadb php php-mysql php-gd git
+          systemctl start httpd & systemctl enable httpd
+          systemctl start mariadb & systemctl enable mariadb
+          git clone https://github.com/digininja/DVWA.git /var/www/html/dvwa
+          cp /var/www/html/dvwa/config/config.inc.php.dist /var/www/html/dvwa/config/config.inc.php
+
+
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: webserverALB
+      Type: application
+      SecurityGroups:
+        - !Ref VPC1SG
+      Subnets:
+        - !Ref VPC1PubSN1
+        - !Ref VPC1PubSN2
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC1
+      Name: basicTG
+      Port: 80
+      Protocol: HTTP
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Targets:
+        - Id: !Ref DVWAEC2
+      TargetType: instance
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup   
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP

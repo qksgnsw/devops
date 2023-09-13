@@ -47,7 +47,7 @@
       4. 터널2는 안해봄
       5. 구성 시 리모트 대역은 축약하여 사용 함.
          1. 10.0.0.0/8
-      6. ```
+      ```
       /etc/sysctl.conf
       sysctl -p
       /etc/ipsec.conf

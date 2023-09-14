@@ -1,11 +1,35 @@
 Parameters:
   SystemName:
     Type: String
+    AllowedValues:
+      - Active-Region
+      - Passive-Region
     Default: Active-Region
   # 최신 이미지
   EC2ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
+  # Auto Scaling 정책
+  ASGPolicyFollowingMetric:
+    Type: String
+    AllowedValues:
+      - ALBRequestCountPerTarget
+      - ASGAverageCPUUtilization
+      - ASGAverageNetworkIn
+      - ASGAverageNetworkOut
+    Default: ASGAverageCPUUtilization
+  ASGPolicyTargetValue:
+    Type: Number
+    AllowedValues:
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+      - 90
+    Default: 70
+  
 
 Resources:
   # VPC
@@ -337,9 +361,8 @@ Resources:
       PolicyType: TargetTrackingScaling
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
-        # ALBRequestCountPerTarget | ASGAverageCPUUtilization | ASGAverageNetworkIn | ASGAverageNetworkOut
-          PredefinedMetricType: ASGAverageCPUUtilization
-        TargetValue: 50
+          PredefinedMetricType: !Ref ASGPolicyFollowingMetric
+        TargetValue: !Ref ASGPolicyTargetValue
 
 Outputs:
   AmiID:

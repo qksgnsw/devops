@@ -32,14 +32,14 @@ Resources:
         - Key: Name
           Value: !Sub ${FailoverState}-HealthCheck
 
-  # Route53
+  # Route53 - Failover
   RouteRecordSet:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: !Join [ ".", [ !Ref OriginDomainName, "" ] ]
       Name: !Join [ ".", [ "www", !Ref OriginDomainName, "" ] ]
       Type: A
-      Failover: !Sub ${FailoverState} # SECONDARY
+      Failover: !Sub ${FailoverState}
       SetIdentifier: !Sub ${FailoverState}-Health-Check
       HealthCheckId: !Ref HealthCheck
       AliasTarget: 

@@ -112,4 +112,10 @@
   - [x] Failover Routing
     - [x] Active
     - [x] Passive
-- [ ] 📍이제 백업에 관한 내용들을 만들어보자.
+- [ ] 📍아래 리소스를 바탕으로 추가한다.
+  - [ ] AWS Aurora
+  - [ ] S3
+  - [ ] AWS Backup
+  - [ ] Global Accelertor
+  - [ ] CloudWatch alram
+  - [ ] AWS SNS

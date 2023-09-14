@@ -7,11 +7,11 @@ Blue='\033[0;34m'
 
 # RAID 레벨 선택 및 디스크 목록 입력 받기
 printf ${BGreen}
-echo "* [Start] 사용 가능한 RAID levels: linear, 0, 1, 5"
+echo "* [Start] 사용 가능한 RAID levels: linear, 0, 1, 5, 6"
 printf ${Color_Off}
-read -p "1. RAID name을 입력하세요. (e.g., /dev/*): " raid_name
+read -p "1. RAID name을 입력하세요. (e.g., /dev/md?): " raid_name
 read -p "2. RAID level을 입력하세요 (e.g., 1): " raid_level
-read -p "3. disk devices를 입력하세요 (e.g., /dev/sdX /dev/sdY): " disk_devices
+read -p "3. disk devices를 입력하세요 (e.g., /dev/sd? /dev/sd?): " disk_devices
 # 마운트 지점 입력 받기
 read -p "4. mount 지점을 입력하세요. (e.g., /mnt/myraid): " mount_point
 
@@ -67,6 +67,7 @@ mount $raid_name $mount_point
 
 # fstab에 마운트 정보 추가 (부팅 시 자동 마운트)
 echo "$raid_name $mount_point ext4 defaults 0 0" >> /etc/fstab
+mount -a
 
 # RAID 배열 정보 표시
 printf ${Blue}

@@ -7,7 +7,7 @@
 - 웹서비스 취약점에 대한 공격을 탐지하고 차단하는 기능을 수행한다.
 - 웹 접근 트래픽에 대한 페이로드 분석 및 패턴 기반의 필터링을 통해 공격을 탐지하고 차단할 수 있다.
     
-    ![Untitled](./Untitled.png)
+    ![Untitled](./images/Untitled.png)
     
 - AWS에서 관리하는 웹 애플리케이션 전용 방화벽이다.
 
@@ -27,11 +27,11 @@
 
 - 실습 구성도
     
-    ![Untitled](./Untitled-2.png)
+    ![Untitled](./images/Untitled-2.png)
     
 - 생성 자원
     
-    ![Untitled](./Untitled-3.png)
+    ![Untitled](./images/Untitled-3.png)
 
 - [DVWA](https://github.com/digininja/DVWA)
 - db 설정
@@ -48,5 +48,5 @@ Query OK, 0 rows affected (0.01 sec)
 mysql> flush privileges;
 Query OK, 0 rows affected (0.00 sec)
 ```
-- ![](./dvwa1.png)
-- ![](./dvwa2.png)
+- ![](./images/dvwa1.png)
+- ![](./images/dvwa2.png)

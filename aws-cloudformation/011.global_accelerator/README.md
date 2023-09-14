@@ -13,7 +13,7 @@
 - 애플리케이션을 오가는 경로가 서로 다를 수 있다.
 - 각 홉은 성능에 영향을 주며 위험을 초래할 수 있다.
     
-    ![Untitled](./global_accelerator1.jpeg)
+    ![Untitled](./images/global_accelerator1.jpeg)
     
 
 ## 나. Global Accelerator 적용
@@ -21,7 +21,7 @@
 - AWS Global Accelerator를 추가하면 이러한 비효율성이 사라진다.
 - 글로벌 AWS 네트워크를 활용하므로 성능이 개선된다.
     
-    ![Untitled](./global_accelerator2.jpeg)
+    ![Untitled](./images/global_accelerator2.jpeg)
     
 - Global Accelerator의 핵심은 애니캐스트(Anycast) IP 주소를 제공하여 사용자 입장에서 가장 인접한 대상으로 접근이 가능하게 하고, AWS 글로벌 네트워크를 경유하여 안정적이고 빠른 서비스를 제공한다.
 
@@ -39,7 +39,7 @@
 
 - 실습 구성도
     
-    ![Untitled](./global_accelerator3.png)
+    ![Untitled](./images/global_accelerator3.png)
     
 - 시드니와 상파울루에 구성된 웹 서버에 대해 Global Accelerator를 통해 연결되는 상태를 확인한다.
 
@@ -47,22 +47,22 @@
 
 - 시드니 리전(키페어 생성후 자원 생성한다.)
     
-    ![Untitled](./global_accelerator4.png)
+    ![Untitled](./images/global_accelerator4.png)
     
 - 상파울루 리전(키페어 생성후 자원 생성한다.)
     
-    ![Untitled](./global_accelerator5.png)
+    ![Untitled](./images/global_accelerator5.png)
     
 - 서울 리전과 버지니어 리전(생략)
     
-    ![Untitled](./global_accelerator6.png)
+    ![Untitled](./images/global_accelerator6.png)
 
 ## 나. 결과
 - 기본 서울에서 접속할 경우 시드니로 접속
-![](./result1.png)
+![](./images/result1.png)
 - 로드밸런서가 잡혀있으므로 분산이 되는 모습
-![](./result2.png)
+![](./images/result2.png)
 - 미국으로 VPN 잡고 접속시 상파울로로 접속
-![](./result3.png)
+![](./images/result3.png)
 - global accelerator자체에서 분산이 되는 모습
-![](./result4.png)
+![](./images/result4.png)

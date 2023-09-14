@@ -8,8 +8,8 @@
 
 
 
-![](./transit_gateway1.png)
-![](./transit_gateway2.png)
-![](./transit_gateway3.png)
-![](./transit_gateway4.png)
-![](./transit_gateway5.png)
+![](./images/transit_gateway1.png)
+![](./images/transit_gateway2.png)
+![](./images/transit_gateway3.png)
+![](./images/transit_gateway4.png)
+![](./images/transit_gateway5.png)

@@ -1,0 +1,400 @@
+Parameters:
+  SystemName:
+    Type: String
+    Default: Active-Region
+  # 최신 이미지
+  EC2ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
+
+Resources:
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: 
+        - Key: Name
+          Value: !Sub ${SystemName}-vpc 
+  # 인터넷게이트웨이 
+  InternetGateway: 
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags: 
+        - Key: Name
+          Value: !Sub ${SystemName}-igw
+  InternetGatewayAttachment: 
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  # NAT 게이트웨이
+  NATGatewayEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+      - Key: Name
+        Value: !Sub ${SystemName}-nat-eip
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet0
+      Tags:
+      - Key: Name
+        Value: !Sub ${SystemName}-nat
+  # 서브넷
+  PublicSubnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: True
+      Tags:
+        - Key: Name
+          Value: !Sub ${SystemName}-public-subnet-0
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: True
+      Tags:
+        - Key: Name
+          Value: !Sub ${SystemName}-public-subnet-1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: True
+      Tags:
+        - Key: Name
+          Value: !Sub ${SystemName}-private-subnet-2
+  PrivateSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: 10.0.3.0/24
+      MapPublicIpOnLaunch: True
+      Tags:
+        - Key: Name
+          Value: !Sub ${SystemName}-private-subnet-3
+  # 라우팅 테이블
+  PublicSubnetRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${SystemName}-public-rt
+  PublicSNRTAss0:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet0
+      RouteTableId: !Ref PublicSubnetRT
+  PublicSNRTAss1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicSubnetRT
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicSubnetRT
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PrivateSubnetRT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${SystemName}-private-rt
+  PrivateSNRTAss2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateSubnetRT
+  PrivateSNRTAss3:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet3
+      RouteTableId: !Ref PrivateSubnetRT
+  PrivateDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: 
+      - NATGateway
+    Properties:
+      RouteTableId: !Ref PrivateSubnetRT
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+
+  # 보안그룹
+  PublicSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Allow ssh, ICMP
+      Tags:
+      - Key : Name
+        Value : !Sub ${SystemName}-public-sg
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: -1
+        CidrIp: 0.0.0.0/0
+  PrivateSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Allow ssh, ICMP, HTTP/S
+      Tags:
+      - Key : Name
+        Value : !Sub ${SystemName}-private-sg
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: icmp
+        FromPort: -1
+        ToPort: -1
+        CidrIp: 0.0.0.0/0
+  # EC2
+  Bastion0:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref EC2ImageId
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: !Sub ${SystemName}-bastion-0
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.0.0.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref PublicSG
+          SubnetId: !Ref PublicSubnet0
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum install -y httpd
+          sudo systemctl start httpd.service
+          sudo systemctl enable httpd.service
+          sudo echo "<h1>This is Bastion0 from $(hostname -f)</h1>" > /var/www/html/index.html
+  Bastion1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref EC2ImageId
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      Tags:
+      - Key: Name
+        Value: !Sub ${SystemName}-bastion-1
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          PrivateIpAddress: 10.0.1.100
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref PublicSG
+          SubnetId: !Ref PublicSubnet1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum install -y httpd
+          sudo systemctl start httpd.service
+          sudo systemctl enable httpd.service
+          sudo echo "<h1>This is Bastion1 from $(hostname -f)</h1>" > /var/www/html/index.html
+  # ALB 및 Auto Scailing
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Group
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub ${SystemName}-alb-sg
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub '${SystemName}-launch-template-for-auto-scaling'
+      LaunchTemplateData:
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            Groups:
+              - !Ref PrivateSG
+            DeleteOnTermination: true
+        Placement:
+          Tenancy: default
+        ImageId: !Ref EC2ImageId
+        InstanceType: t2.micro
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            echo "password!" | passwd --stdin root
+            sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+            sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+            systemctl restart sshd
+            yum update -y
+            yum install -y httpd.x86_64
+            systemctl start httpd.service
+            systemctl enable httpd.service
+            echo "<h1>Hello World from $(hostname -f): AUTO SCAILNG INSTANCE.</h1>" > /var/www/html/index.html
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${SystemName}-alb
+      Type: application
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets:
+        - !Ref PublicSubnet0
+        - !Ref PublicSubnet1
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Name: AutoScailingEC2
+      Port: 80
+      Protocol: HTTP
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup   
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+  ASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      Cooldown: 10
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MaxSize: 4
+      MinSize: 2
+      DesiredCapacity: 2
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${SystemName}-ASG
+          PropagateAtLaunch: true
+  ASGPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref ASG
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+        # ALBRequestCountPerTarget | ASGAverageCPUUtilization | ASGAverageNetworkIn | ASGAverageNetworkOut
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 50
+
+Outputs:
+  AmiID:
+    Description: used ami id.
+    Value: !Ref EC2ImageId
+    Export: 
+      Name: !Ref EC2ImageId
+
+  VpcID:
+    Description: VPC id.
+    Value: !Ref VPC
+    Export: 
+      Name: !Sub ${SystemName}-vpc 
+
+  PubSN0ID:
+    Description: public subnet 0 id.
+    Value: !Ref PublicSubnet0
+    Export: 
+      Name: !Sub ${SystemName}-public-subnet-0
+  PubSN1ID:
+    Description: public subnet 1 id.
+    Value: !Ref PublicSubnet1
+    Export: 
+      Name: !Sub ${SystemName}-public-subnet-1
+  PrivSN2ID:
+    Description: public subnet 2 id.
+    Value: !Ref PrivateSubnet2
+    Export: 
+      Name: !Sub ${SystemName}-private-subnet-2
+  PrivSN3ID:
+    Description: public subnet 3 id.
+    Value: !Ref PrivateSubnet3
+    Export: 
+      Name: !Sub ${SystemName}-private-subnet-3
+
+  PublicSubnetRT:
+    Description: Public Subnet Route Table ID.
+    Value: !Ref PublicSubnetRT
+    Export: 
+      Name: !Sub ${SystemName}-public-rt
+  PrivateSubnetRT:
+    Description: Private Subnet Route Table ID.
+    Value: !Ref PrivateSubnetRT
+    Export: 
+      Name: !Sub ${SystemName}-private-rt
+
+  AlbDNSName:
+    Description: alb dns name.
+    Value: !GetAtt ALB.DNSName
+    Export: 
+      Name: !Sub ${SystemName}-alb-dns
+  AlbHostedZoneNameID:
+    Description: alb host zone name id.
+    Value: !GetAtt ALB.CanonicalHostedZoneID
+    Export: 
+      Name: !Sub ${SystemName}-alb-HostedZoneNameID
+
+

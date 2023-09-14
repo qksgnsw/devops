@@ -1,0 +1,50 @@
+Parameters:
+  SystemName:
+    Type: String
+    AllowedValues:
+      - Active-Region
+      - Passive-Region
+    Default: Active-Region
+  OriginDomainName:
+    Type: String
+    Default: example.com
+  FailoverState:
+    Type: String
+    AllowedValues:
+      - PRIMARY
+      - SECONDARY
+    Default: PRIMARY
+
+Resources:
+  # 상태검사
+  HealthCheck: 
+    Type: AWS::Route53::HealthCheck
+    Properties: 
+      HealthCheckConfig: 
+        Port: 80
+        Type: HTTP
+        ResourcePath: /
+        FullyQualifiedDomainName: 
+          Fn::ImportValue: !Sub ${SystemName}-alb-dns
+        RequestInterval: 30
+        FailureThreshold: 3
+      HealthCheckTags: 
+        - Key: Name
+          Value: !Sub ${FailoverState}-HealthCheck
+
+  # Route53
+  RouteRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join [ ".", [ !Ref OriginDomainName, "" ] ]
+      Name: !Join [ ".", [ "www", !Ref OriginDomainName, "" ] ]
+      Type: A
+      Failover: !Sub ${FailoverState} # SECONDARY
+      SetIdentifier: !Sub ${FailoverState}-Health-Check
+      HealthCheckId: !Ref HealthCheck
+      AliasTarget: 
+        HostedZoneId: 
+          Fn::ImportValue: !Sub ${SystemName}-alb-HostedZoneNameID
+        DNSName: 
+          Fn::ImportValue: !Sub ${SystemName}-alb-dns
+        EvaluateTargetHealth: true

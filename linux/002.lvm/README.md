@@ -18,31 +18,31 @@
 - LV(Logical Volume, 논리 볼륨): 볼륨 그룹을 1개 이상으로 나눠서 논리 그룹으로 나눈 것
 
 
-![](./images/Untitled.png)
+- ![](./images/Untitled.png)
 
 - fdisk
-![](./images/prepare.png)
+- ![](./images/prepare.png)
 
 - pvcreate
-![](./images/pvcreate.png)
+- ![](./images/pvcreate.png)
 
 - vgcreate
-![](./images/vgcreate.png)
+- ![](./images/vgcreate.png)
 
 - lvcreate
-![](./images/lvcreate.png)
+- ![](./images/lvcreate.png)
 
 - check
-![](./images/check.png)
+- ![](./images/check.png)
 
 - mkfs
-![](./images/mkfs.png)
+- ![](./images/mkfs.png)
 
 - mount
-![](./images/mount.png)
+- ![](./images/mount.png)
 
 - mount-check
-![](./images/mount-check.png)
+- ![](./images/mount-check.png)
 
 - fstab
-![](./images/fstab.png)
+- ![](./images/fstab.png)

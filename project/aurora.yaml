@@ -1,0 +1,68 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Here is Project Name. It has to same that is DR template Project Name.
+    Default: Project1
+  DBUsername:
+    NoEcho: 'true'
+    Description: Username for database access
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password for database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: Must contain only alphanumeric characters.
+  Engine:
+    Type: String
+    AllowedValues:
+      - aurora-mysql
+      - aurora-postgresql
+    Default: aurora-mysql
+  DBClusterIdentifier:
+    Type: String
+    Default: aurora-cluster
+  # EngineVersion:
+  #   Type: String
+  # AllocatedStorage:
+  #   Type: Number
+  # Iops:
+  #   Type: Number
+
+Resources:
+  MultiAZDBCluster:
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      Engine: !Ref Engine
+      EngineMode: serverless
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DatabaseName: !Sub ${ProjectName}Aurora
+      BackupRetentionPeriod: 7
+      ScalingConfiguration:
+        AutoPause: true
+        MinCapacity: 1
+        MaxCapacity: 2
+        SecondsUntilAutoPause: 300
+      DeletionProtection: false
+      # DBClusterIdentifier: !Ref DBClusterIdentifier
+      # EngineVersion: !Ref EngineVersion
+      # AllocatedStorage: !Ref AllocatedStorage
+      # Iops: !Ref Iops
+      # DBClusterInstanceClass: db.r6gd.xlarge
+      # StorageType: io1
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub ${ProjectName}-db-instance
+      DBClusterIdentifier: !Ref MultiAZDBCluster
+      Engine: !Ref Engine
+      DBInstanceClass: db.t2.small
+      PubliclyAccessible: false

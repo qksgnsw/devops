@@ -56,7 +56,15 @@
     - 웜 스탠바이는 경제적이며 운영 면에서 덜 복잡한 방식을 제공
 
 ### 사용할 서비스
-- Amazon Aurora DB 스냅샷
+- Amazon Aurora
+  - 클러스터
+    - DB 인스턴스와 3개의 가용 영역에 걸쳐 복사되는 DB 클러스터의 데이터를 
+    - 단일 가상 볼륨으로 보유하는 클러스터 볼륨으로 구성
+    - 읽기와 쓰기를 수행하는 기본 DB 인스턴스
+    - 옵션으로 최대 15개의 Aurora 복제본(리더 DB 인스턴스)이 포함
+    - 구성
+      - 가용 영역이 최소 2개 이상인 AWS 리전의 VPC에만 생성 가능
+  - 스냅샷
   - Amazon Aurora Global Database
 - AWS Backup
   - EBS 볼륨
@@ -115,9 +123,16 @@
     - [x] Active
     - [x] Passive
 - [ ] 📍아래 리소스를 바탕으로 추가한다.
-  - [ ] AWS Aurora
+  - [ ] AWS Aurora -> 어려워서 좀 나중으로 미룸.
+    - [ ] [cloudformation](https://docs.aws.amazon.com/ko_kr/AWSCloudFormation/latest/UserGuide/AWS_RDS.html)
+    - [ ] Snapshot
+    - [ ] AZ
+      - [ ] cluster
+    - [ ] Region
+      - [ ] global database
   - [ ] S3
   - [ ] AWS Backup
-  - [ ] Global Accelertor
+  - [ ] ~~Global Accelertor~~
   - [ ] CloudWatch alram
   - [ ] AWS SNS
+  - [ ] 📍상태 검사 -> 클라우트와치 알람 -> 트리거 -> cloudformation 코드 업데이트

@@ -373,6 +373,9 @@ Resources:
         - Key: Name
           Value: !Sub ${ProjectName}-ASG
           PropagateAtLaunch: true
+        - Key: Mode
+          Value: !Ref deploymentOption
+          PropagateAtLaunch: true
   ASGPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:

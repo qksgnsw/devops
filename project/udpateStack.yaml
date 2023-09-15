@@ -1,0 +1,78 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Here is Project Name. It has to same that is DR template Project Name.
+    Default: Project1
+
+Resources:
+  CloudFormationUpdateRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudFormationUpdateRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudFormationUpdatePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:UpdateStack
+                  - cloudformation:DescribeStacks
+                  - s3:Get*
+                  - ssm:Get*
+                  - ec2:*
+                  - autoscaling:*
+                  - elasticloadbalancing:*
+                Resource: '*'
+
+  updateActiveLambdaFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: updateActiveLambdaFn
+      Runtime: nodejs14.x
+      Role: !GetAtt CloudFormationUpdateRole.Arn
+      Handler: index.handler
+      Timeout: 300
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const cfn = new AWS.CloudFormation();
+          exports.handler = async (event, context) => {
+            try {
+              const stackName = "dr1" // StackName
+              // 스택 업데이트 실행
+              const updateParams = {
+                StackName: stackName,
+                TemplateURL: 'https://cf-templates-ynklzs4abqin-ap-northeast-2.s3.ap-northeast-2.amazonaws.com/2023-09-15T052848.751Z53v-DR.yaml',
+                UsePreviousTemplate: false,  // 템플릿 변경 여부
+                Parameters: [
+                  {
+                    ParameterKey: "deploymentOption",
+                    ParameterValue: "active"
+                  }
+                ]
+              };
+              await cfn.updateStack(updateParams).promise();
+              // 업데이트 완료를 기다린 후 응답
+              await cfn.waitFor('stackUpdateComplete', { StackName: stackName }).promise();
+              return {
+                Status: 'SUCCESS',
+                PhysicalResourceId: 'CustomResourcePhysicalID',
+              };
+            } catch (error) {
+              console.error('Error:', error);
+              return {
+                Status: 'FAILED',
+                PhysicalResourceId: 'CustomResourcePhysicalID',
+              };
+            }
+          };
+      TracingConfig:
+        Mode: Active

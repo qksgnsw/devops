@@ -30,7 +30,7 @@
   - 서로 멀리 떨어져 있는 여러 데이터 센터에 손실이 발생할 수 있는 위험이 포함된 재해 이벤트의 경우, 
   - AWS 내 전체 리전에 영향을 미치는 자연 재해 및 기술 재해에 대비할 수 있는 재해 복구 옵션을 고려.
 
-### [재해 복구 옵션](https://docs.aws.amazon.com/ko_kr/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html)
+### [재해 복구 전략 아키텍처](https://docs.aws.amazon.com/ko_kr/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html)
 - 백업 및 복원
   - 데이터 손실 또는 손상을 완화하는 데 적합한 방식
   - 데이터를 다른 AWS 리전으로 복제

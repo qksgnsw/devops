@@ -1,12 +1,11 @@
 Parameters:
-  SystemName:
+  ProjectName:
     Type: String
-    AllowedValues:
-      - Active-Region
-      - Passive-Region
-    Default: Active-Region
+    Description: Here is Project Name. It has to same that is DR template Project Name.
+    Default: Project1
   OriginDomainName:
     Type: String
+    Description: Domain Name registed to Route53.
     Default: example.com
   FailoverState:
     Type: String
@@ -25,7 +24,7 @@ Resources:
         Type: HTTP
         ResourcePath: /
         FullyQualifiedDomainName: 
-          Fn::ImportValue: !Sub ${SystemName}-alb-dns
+          Fn::ImportValue: !Sub ${ProjectName}-alb-dns
         RequestInterval: 30
         FailureThreshold: 3
       HealthCheckTags: 
@@ -44,7 +43,7 @@ Resources:
       HealthCheckId: !Ref HealthCheck
       AliasTarget: 
         HostedZoneId: 
-          Fn::ImportValue: !Sub ${SystemName}-alb-HostedZoneNameID
+          Fn::ImportValue: !Sub ${ProjectName}-alb-HostedZoneNameID
         DNSName: 
-          Fn::ImportValue: !Sub ${SystemName}-alb-dns
+          Fn::ImportValue: !Sub ${ProjectName}-alb-dns
         EvaluateTargetHealth: true

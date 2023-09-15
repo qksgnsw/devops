@@ -1,17 +1,25 @@
 Parameters:
-  SystemName:
+  ProjectName:
     Type: String
-    AllowedValues:
-      - Active-Region
-      - Passive-Region
-    Default: Active-Region
+    Description: Here is Project Name. It will use to identifier.
+    Default: Project1
   # 최신 이미지
   EC2ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Description: Do Not Update. It is always receive recently AMI
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
   # Auto Scaling 정책
+  AutoScaleDesired:
+    Type: String
+    Description: Auto Scaling desired.
+    Default: '3'
+  AutoScaleMaxSize:
+    Type: String
+    Description: Here is Auto Scaling Max Size.
+    Default: '6'
   ASGPolicyFollowingMetric:
     Type: String
+    Description: Here is Auto Scaling Policy.
     AllowedValues:
       - ALBRequestCountPerTarget
       - ASGAverageCPUUtilization
@@ -20,6 +28,7 @@ Parameters:
     Default: ASGAverageCPUUtilization
   ASGPolicyTargetValue:
     Type: Number
+    Description: Here is Auto Scaling Target Value.
     AllowedValues:
       - 30
       - 40
@@ -29,7 +38,17 @@ Parameters:
       - 80
       - 90
     Default: 70
-  
+  # 배포 옵션 active(primary), passive(secondary) 설정
+  deploymentOption:
+    Type: String
+    Description: Here is deployment option.
+    Default: active
+    AllowedValues:
+      - active # primary
+      - passive # secondary
+
+Conditions:
+  IsActive: !Equals [ !Ref deploymentOption, "active" ]
 
 Resources:
   # VPC
@@ -41,14 +60,14 @@ Resources:
       EnableDnsHostnames: true
       Tags: 
         - Key: Name
-          Value: !Sub ${SystemName}-vpc 
+          Value: !Sub ${ProjectName}-vpc 
   # 인터넷게이트웨이 
   InternetGateway: 
     Type: AWS::EC2::InternetGateway
     Properties: 
       Tags: 
         - Key: Name
-          Value: !Sub ${SystemName}-igw
+          Value: !Sub ${ProjectName}-igw
   InternetGatewayAttachment: 
     Type: AWS::EC2::VPCGatewayAttachment
     Properties: 
@@ -61,7 +80,7 @@ Resources:
       Domain: vpc
       Tags:
       - Key: Name
-        Value: !Sub ${SystemName}-nat-eip
+        Value: !Sub ${ProjectName}-nat-eip
   NATGateway:
     Type: AWS::EC2::NatGateway
     Properties:
@@ -69,7 +88,7 @@ Resources:
       SubnetId: !Ref PublicSubnet0
       Tags:
       - Key: Name
-        Value: !Sub ${SystemName}-nat
+        Value: !Sub ${ProjectName}-nat
   # 서브넷
   PublicSubnet0:
     Type: AWS::EC2::Subnet
@@ -80,7 +99,7 @@ Resources:
       MapPublicIpOnLaunch: True
       Tags:
         - Key: Name
-          Value: !Sub ${SystemName}-public-subnet-0
+          Value: !Sub ${ProjectName}-public-subnet-0
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -90,7 +109,7 @@ Resources:
       MapPublicIpOnLaunch: True
       Tags:
         - Key: Name
-          Value: !Sub ${SystemName}-public-subnet-1
+          Value: !Sub ${ProjectName}-public-subnet-1
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
@@ -101,7 +120,7 @@ Resources:
       MapPublicIpOnLaunch: True
       Tags:
         - Key: Name
-          Value: !Sub ${SystemName}-private-subnet-2
+          Value: !Sub ${ProjectName}-private-subnet-2
   PrivateSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
@@ -111,7 +130,7 @@ Resources:
       MapPublicIpOnLaunch: True
       Tags:
         - Key: Name
-          Value: !Sub ${SystemName}-private-subnet-3
+          Value: !Sub ${ProjectName}-private-subnet-3
   # 라우팅 테이블
   PublicSubnetRT:
     Type: AWS::EC2::RouteTable
@@ -119,7 +138,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${SystemName}-public-rt
+          Value: !Sub ${ProjectName}-public-rt
   PublicSNRTAss0:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -144,7 +163,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${SystemName}-private-rt
+          Value: !Sub ${ProjectName}-private-rt
   PrivateSNRTAss2:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -172,7 +191,7 @@ Resources:
       GroupDescription: Allow ssh, ICMP
       Tags:
       - Key : Name
-        Value : !Sub ${SystemName}-public-sg
+        Value : !Sub ${ProjectName}-public-sg
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 22
@@ -191,7 +210,7 @@ Resources:
       GroupDescription: Allow ssh, ICMP, HTTP/S
       Tags:
       - Key : Name
-        Value : !Sub ${SystemName}-private-sg
+        Value : !Sub ${ProjectName}-private-sg
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 22
@@ -218,7 +237,7 @@ Resources:
       AvailabilityZone: !Select [ 0, !GetAZs '' ]
       Tags:
       - Key: Name
-        Value: !Sub ${SystemName}-bastion-0
+        Value: !Sub ${ProjectName}-bastion-0
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           PrivateIpAddress: 10.0.0.100
@@ -242,7 +261,7 @@ Resources:
       AvailabilityZone: !Select [ 2, !GetAZs '' ]
       Tags:
       - Key: Name
-        Value: !Sub ${SystemName}-bastion-1
+        Value: !Sub ${ProjectName}-bastion-1
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           PrivateIpAddress: 10.0.1.100
@@ -266,7 +285,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
       - Key: Name
-        Value: !Sub ${SystemName}-alb-sg
+        Value: !Sub ${ProjectName}-alb-sg
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -279,7 +298,7 @@ Resources:
   LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: !Sub '${SystemName}-launch-template-for-auto-scaling'
+      LaunchTemplateName: !Sub '${ProjectName}-launch-template-for-auto-scaling'
       LaunchTemplateData:
         NetworkInterfaces:
           - DeviceIndex: 0
@@ -305,7 +324,7 @@ Resources:
   ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub ${SystemName}-alb
+      Name: !Sub ${ProjectName}-alb
       Type: application
       SecurityGroups:
         - !Ref ALBSecurityGroup
@@ -345,14 +364,14 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      MaxSize: 4
-      MinSize: 2
-      DesiredCapacity: 2
+      MinSize: !If [ IsActive, !Ref AutoScaleDesired, 1 ]
+      MaxSize: !Ref AutoScaleMaxSize
+      DesiredCapacity: !If [ IsActive, !Ref AutoScaleDesired, 1 ]
       TargetGroupARNs:
         - !Ref TargetGroup
       Tags:
         - Key: Name
-          Value: !Sub ${SystemName}-ASG
+          Value: !Sub ${ProjectName}-ASG
           PropagateAtLaunch: true
   ASGPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
@@ -375,49 +394,49 @@ Outputs:
     Description: VPC id.
     Value: !Ref VPC
     Export: 
-      Name: !Sub ${SystemName}-vpc 
+      Name: !Sub ${ProjectName}-vpc 
 
   PubSN0ID:
     Description: public subnet 0 id.
     Value: !Ref PublicSubnet0
     Export: 
-      Name: !Sub ${SystemName}-public-subnet-0
+      Name: !Sub ${ProjectName}-public-subnet-0
   PubSN1ID:
     Description: public subnet 1 id.
     Value: !Ref PublicSubnet1
     Export: 
-      Name: !Sub ${SystemName}-public-subnet-1
+      Name: !Sub ${ProjectName}-public-subnet-1
   PrivSN2ID:
     Description: public subnet 2 id.
     Value: !Ref PrivateSubnet2
     Export: 
-      Name: !Sub ${SystemName}-private-subnet-2
+      Name: !Sub ${ProjectName}-private-subnet-2
   PrivSN3ID:
     Description: public subnet 3 id.
     Value: !Ref PrivateSubnet3
     Export: 
-      Name: !Sub ${SystemName}-private-subnet-3
+      Name: !Sub ${ProjectName}-private-subnet-3
 
   PublicSubnetRT:
     Description: Public Subnet Route Table ID.
     Value: !Ref PublicSubnetRT
     Export: 
-      Name: !Sub ${SystemName}-public-rt
+      Name: !Sub ${ProjectName}-public-rt
   PrivateSubnetRT:
     Description: Private Subnet Route Table ID.
     Value: !Ref PrivateSubnetRT
     Export: 
-      Name: !Sub ${SystemName}-private-rt
+      Name: !Sub ${ProjectName}-private-rt
 
   AlbDNSName:
     Description: alb dns name.
     Value: !GetAtt ALB.DNSName
     Export: 
-      Name: !Sub ${SystemName}-alb-dns
+      Name: !Sub ${ProjectName}-alb-dns
   AlbHostedZoneNameID:
     Description: alb host zone name id.
     Value: !GetAtt ALB.CanonicalHostedZoneID
     Export: 
-      Name: !Sub ${SystemName}-alb-HostedZoneNameID
+      Name: !Sub ${ProjectName}-alb-HostedZoneNameID
 
 

@@ -76,3 +76,10 @@ Resources:
           };
       TracingConfig:
         Mode: Active
+
+Outputs:
+  LambdaArn:
+    Description: stack update lambda arn.
+    Value: !GetAtt updateActiveLambdaFn.Arn
+    Export: 
+      Name: !Sub ${ProjectName}-lambda-arn

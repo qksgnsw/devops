@@ -123,7 +123,7 @@
     - [x] Active
     - [x] Passive
 - [ ] 📍아래 리소스를 바탕으로 추가한다.
-- [ ] **DR 자동화**
+- [x] **DR 자동화**
   - [x] 스택 업데이트 람다 함수 생성
     - [x] 권한 설정하기
       - [x] cloudformation
@@ -133,14 +133,15 @@
       - [x] autoscaling
       - [x] elasticloadbalancing
     - [ ] 📍템플릿 Url과 스택네임을 정적으로 적어놓은 아쉬움.
-  - [ ] AWS SNS
-    - [ ] 람다 함수와 연결하는 topic 생성
-    - [ ] 멀티리전 구축
-  - [ ] CloudWatch alram
-    - [ ] api 오류율 경보 생성
-      - [ ] SNS와 연결
-    - [ ] 응답시간 경보 생성
-      - [ ] SNS와 연결
+  - [x] AWS SNS
+    - [x] 람다 함수와 연결하는 topic 생성
+    - [x] 멀티리전 구축
+    - [x] 람다 함수 호출 권한
+  - [x] CloudWatch alram
+    - [x] api 오류율 경보 생성
+      - [x] SNS와 연결
+    - [x] 응답시간 경보 생성
+      - [x] SNS와 연결
 - [ ] **추후 보강 예정**
   - [ ] AWS Aurora
     - [ ] [cloudformation](https://docs.aws.amazon.com/ko_kr/AWSCloudFormation/latest/UserGuide/AWS_RDS.html)

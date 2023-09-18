@@ -1,3 +1,5 @@
+Description: This template must deploy on two region, primary and secondary.
+
 Parameters:
   ProjectName:
     Type: String

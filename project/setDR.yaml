@@ -1,0 +1,155 @@
+# SNS 생성
+# AWS::SNS::Topic
+# DisplayName
+# AWS::SNS::Subscription
+# Protocol: lambda
+# TopicArn: !Ref 
+# Endpoint: !Ref SecondUpdateLambdaArn
+
+# 경보 생성
+# AWS::CloudWatch::Alarm
+# AWS/ApplicationELB
+# HTTPCode_ELB_4XX_Count
+# HTTPCode_ELB_5XX_Count
+# TargetResponseTime
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Here is Project Name. It will use to identifier.
+    Default: Project1
+  # SecondUpdateLambdaArn:
+  #   Type: String
+  #   Description: Secondary Region Update Lambda Arn.
+    # Default: arn:aws:lambda:*
+    # AllowedPattern: arn:aws:lambda:*
+
+Resources:
+  CloudFormationUpdateRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudFormationUpdateRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CloudFormationUpdatePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:UpdateStack
+                  - cloudformation:DescribeStacks
+                  - s3:Get*
+                  - ssm:Get*
+                  - ec2:*
+                  - autoscaling:*
+                  - elasticloadbalancing:*
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  updateActiveLambdaFn:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: updateActiveLambdaFn
+      Runtime: nodejs14.x
+      Role: !GetAtt CloudFormationUpdateRole.Arn
+      Handler: index.handler
+      Timeout: 300
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+
+          exports.handler = async (event, context) => {
+            try {
+              const targetRegion = "ap-northeast-1" // 타겟 리전
+              const stackName = "dr2" // 배포시 스택 이름
+
+              const cfn = new AWS.CloudFormation({ region: targetRegion });
+
+              // 스택 업데이트 실행
+              const updateParams = {
+                StackName: stackName,
+                TemplateURL: 'https://cf-templates-ynklzs4abqin-ap-northeast-1.s3.ap-northeast-1.amazonaws.com/2023-09-18T031248.648Zhrn-1.Deployment.yaml',
+                UsePreviousTemplate: false,  // 템플릿 변경 여부
+                Parameters: [
+                  {
+                    ParameterKey: "deploymentOption",
+                    ParameterValue: "active"
+                  }
+                ]
+              };
+              await cfn.updateStack(updateParams).promise();
+              // 업데이트 완료를 기다린 후 응답
+              await cfn.waitFor('stackUpdateComplete', { StackName: stackName }).promise();
+              return {
+                Status: 'SUCCESS',
+                PhysicalResourceId: 'CustomResourcePhysicalID',
+              };
+            } catch (error) {
+              console.error('Error:', error);
+              return {
+                Status: 'FAILED',
+                PhysicalResourceId: 'CustomResourcePhysicalID',
+              };
+            }
+          };
+      TracingConfig:
+        Mode: Active
+
+  DrSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub ${ProjectName}-Dr
+    
+  DrSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref DrSNSTopic
+      Endpoint: !GetAtt updateActiveLambdaFn.Arn
+      # Endpoint: !Ref SecondUpdateLambdaArn
+
+  ALB5xxErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${ProjectName}-ALB5xxErrorRateAlarm
+      AlarmDescription: !Sub ${ProjectName}-ALB 5xx Error Rate Alarm
+      Namespace: AWS/ApplicationELB
+      MetricName: HTTPCode_ELB_5XX_Count  # 5XX 오류 카운트 모니터링 (오류 코드에 따라 조정 가능)
+      Dimensions:
+        - Name: LoadBalancer
+          Value: 
+            Fn::ImportValue: !Sub ${ProjectName}-alb-name # 로드 밸런서 이름으로 변경
+      EvaluationPeriods: 1
+      Period: 60  # 평가 주기 (초)
+      Statistic: Sum
+      Threshold: 1  # 1 이상의 5xx 에러가 발생하면 경보
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref DrSNSTopic  # 경보 발생 시 알림을 보낼 SNS 주제
+
+  ALBLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${ProjectName}-ALBLatencyAlarm
+      AlarmDescription: !Sub ${ProjectName}-ALB Latency Alarm
+      Namespace: AWS/ApplicationELB
+      MetricName: TargetResponseTime  # 대상 응답 시간 모니터링
+      Dimensions:
+        - Name: LoadBalancer
+          Value: 
+            Fn::ImportValue: !Sub ${ProjectName}-alb-name # 로드 밸런서 이름으로 변경
+      Statistic: Average
+      Period: 60
+      Threshold: 0.5  # 0.5초 이상의 평균 응답 시간이 발생하면 경보
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Ref DrSNSTopic  # 경보 발생 시 알림을 보낼 SNS 주제

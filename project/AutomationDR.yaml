@@ -48,16 +48,16 @@ Resources:
 
           exports.handler = async (event, context) => {
             try {
-              const targetRegion = "ap-northeast-1" // 타겟 리전
-              const stackName = "dr2" // 배포시 스택 이름
-
+              const targetRegion = "타겟 리전"
+              const stackName = "배포시 스택 이름"
+              const s3Url = "S3 템플릿 저장소 주소"
               const cfn = new AWS.CloudFormation({ region: targetRegion });
 
               // 스택 업데이트 실행
               const updateParams = {
                 StackName: stackName,
                 // S3에 저장된 cloudformation template.
-                TemplateURL: 'https://cf-templates-ynklzs4abqin-ap-northeast-1.s3.ap-northeast-1.amazonaws.com/2023-09-18T031248.648Zhrn-1.Deployment.yaml',
+                TemplateURL: s3Url,
                 UsePreviousTemplate: false,  // 템플릿 변경 여부
                 Parameters: [
                   {

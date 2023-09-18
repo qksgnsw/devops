@@ -1,28 +1,8 @@
-# SNS 생성
-# AWS::SNS::Topic
-# DisplayName
-# AWS::SNS::Subscription
-# Protocol: lambda
-# TopicArn: !Ref 
-# Endpoint: !Ref SecondUpdateLambdaArn
-
-# 경보 생성
-# AWS::CloudWatch::Alarm
-# AWS/ApplicationELB
-# HTTPCode_ELB_4XX_Count
-# HTTPCode_ELB_5XX_Count
-# TargetResponseTime
-
 Parameters:
   ProjectName:
     Type: String
     Description: Here is Project Name. It will use to identifier.
     Default: Project1
-  # SecondUpdateLambdaArn:
-  #   Type: String
-  #   Description: Secondary Region Update Lambda Arn.
-    # Default: arn:aws:lambda:*
-    # AllowedPattern: arn:aws:lambda:*
 
 Resources:
   CloudFormationUpdateRole:
@@ -76,6 +56,7 @@ Resources:
               // 스택 업데이트 실행
               const updateParams = {
                 StackName: stackName,
+                // S3에 저장된 cloudformation template.
                 TemplateURL: 'https://cf-templates-ynklzs4abqin-ap-northeast-1.s3.ap-northeast-1.amazonaws.com/2023-09-18T031248.648Zhrn-1.Deployment.yaml',
                 UsePreviousTemplate: false,  // 템플릿 변경 여부
                 Parameters: [
@@ -103,6 +84,14 @@ Resources:
       TracingConfig:
         Mode: Active
 
+  SNSInvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt updateActiveLambdaFn.Arn
+      Principal: sns.amazonaws.com
+      # SourceArn: YourSNSTopicArn
+
   DrSNSTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -114,7 +103,6 @@ Resources:
       Protocol: lambda
       TopicArn: !Ref DrSNSTopic
       Endpoint: !GetAtt updateActiveLambdaFn.Arn
-      # Endpoint: !Ref SecondUpdateLambdaArn
 
   ALB5xxErrorRateAlarm:
     Type: AWS::CloudWatch::Alarm

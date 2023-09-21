@@ -77,9 +77,10 @@ EOL
 
 echo "파일 내용이 수정되었습니다."
 
-# dns 실행
-systemctl start named
+# dns 재실행
 systemctl enable named
+systemctl restart named
+
 
 # 방화벽 설정
 port_to_allow=53

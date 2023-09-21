@@ -48,9 +48,10 @@ Resources:
 
           exports.handler = async (event, context) => {
             try {
-              const targetRegion = "타겟 리전"
-              const stackName = "배포시 스택 이름"
-              const s3Url = "S3 템플릿 저장소 주소"
+              const targetRegion = "ap-northeast-1" // 타겟 리전
+              const stackName = "tokyo" // 배포시 스택 이름
+              const s3Url = "https://cf-templates-ynklzs4abqin-ap-northeast-1.s3.ap-northeast-1.amazonaws.com/2023-09-18T083825.110Z41f-Deployment.yaml"
+
               const cfn = new AWS.CloudFormation({ region: targetRegion });
 
               // 스택 업데이트 실행

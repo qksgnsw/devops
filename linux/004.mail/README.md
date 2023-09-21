@@ -31,3 +31,20 @@
     ![Untitled](./iamges/Untitled-3.png)
     
 - 모든 장치 초기화(4대 가상머신 사용)
+
+```bash
+
+# ServerA
+chmod 755 ./*.sh
+./setupMailServerA.sh
+./setupDns.sh
+./regDNS.sh
+./setupSendmailCFwithDovecotA.sh
+
+# ServerB
+chmod 755 ./*.sh
+./setupMailServerB.sh
+./regDNS.sh
+./setupSendmailCFwithDovecotB.sh
+
+```

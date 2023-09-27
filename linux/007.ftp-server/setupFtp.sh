@@ -83,5 +83,5 @@ systemctl restart vsftpd
 log "SUCCESS" "vsftpd 재시작 되었습니다."
 
 # 서비스 상태 확인
-log "INFO" "Service-Enable is: ${systemctl is-enabled vsftpd}"
-log "INFO" "Service-Active is: ${systemctl is-active vsftpd}"
+log "INFO" "Service-Enable is: $(systemctl is-enabled vsftpd)"
+log "INFO" "Service-Active is: $(systemctl is-active vsftpd)"

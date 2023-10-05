@@ -50,10 +50,11 @@ select runner in "broadcast" "activebackup" "loadbalance" "roundrobin" "lacp"; d
 done
 
 read -p "IP 주소를 입력하세요 (예: 192.168.1.100): " team_ip4
+read -p "서브넷 마스크를 입력하세요 (예: 0-32): " team_subnet_mask
 read -p "게이트웨이 주소를 입력하세요 (예: 192.168.1.1): " team_gw
 
 # 팀링 인터페이스 생성 및 활성화
-nmcli con add type team con-name $team_name ifname $team_name ip4 $team_ip4 gw4 $team_gw config '{"runner": {"name": ''"'$runner'"}}'
+nmcli con add type team con-name $team_name ifname $team_name ip4 $team_ip4/$team_subnet_mask gw4 $team_gw config '{"runner": {"name": "'$runner'"}}'
 nmcli con up $team_name
 
 log "INFO" "현재 사용할 수 있는 Device 목록입니다."
@@ -70,4 +71,7 @@ for ((i=1; i<=$slave_count; i++)); do
 done
 
 # 설정 확인
-echo "Teaming 설정이 완료되었습니다."
+log "SUCCESS" "Teaming 설정이 완료되었습니다."
+
+log "INFO" "현재 연결 목록입니다."
+nmcli con show

@@ -19,7 +19,7 @@ packages=("httpd" "php" "php-mysqlnd" "mariadb-server" "php-json")
 
 install_package() {
   package_name=$1
-  if yum list installed "$package_name" &>/dev/null; then
+  if rpm -q "$package_name" &>/dev/null; then
     log "INFO" "$package_name 패키지가 이미 설치되어 있습니다."
   else
     log "INFO" "$package_name 패키지를 설치합니다."

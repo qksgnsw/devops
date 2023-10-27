@@ -1,0 +1,42 @@
+---
+# 타임존 서울로 바꾸기
+- name: Set up Timezone
+  hosts: httpd # 해당 호스트 그룹명
+  gather_facts: no  # 노드 정보 모으기 안함
+  become: yes  # nginx 설치 시 sudo 권한이 필요하다.
+
+  tasks:
+    - name: Set Timezone to Asia/Seoul
+      timezone:
+        name: Asia/Seoul
+
+    - name: Install httpd web server
+      yum:
+        name: apache2
+        state: present
+
+    - name: start httpd web server
+      service:
+        name: apache2
+        state: started
+
+- name: Set up Timezone
+  hosts: nginx # 해당 호스트 그룹명
+  gather_facts: no  # 노드 정보 모으기 안함
+  become: yes  # nginx 설치 시 sudo 권한이 필요하다.
+
+  tasks:
+    - name: Set Timezone to Asia/Seoul
+      timezone:
+        name: Asia/Seoul
+
+    - name: Install nginx web server
+      yum:
+        name: nginx
+        state: present
+
+    - name: start nginx web server
+      service:
+        name: nginx
+        state: started
+...

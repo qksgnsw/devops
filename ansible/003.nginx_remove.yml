@@ -1,0 +1,21 @@
+---
+# nginx 삭제
+# 설치와 데몬 시작, 종료는 되지만 삭제는 되지 않는다.
+
+- name: Remove nginx on linux
+  hosts: linux # 해당 호스트 그룹명
+  gather_facts: no  # 노드 정보 모으기 안함
+  become: yes  # nginx 설치 시 sudo 권한이 필요하다.
+
+  tasks:
+    - name: start nginx web server
+      service:
+        name: nginx
+        state: stopped
+
+   # 삭제 안됨.. 이유 찾아야함
+    - name: Remove nginx web server
+      yum:
+        name: nginx
+        state: absent
+...

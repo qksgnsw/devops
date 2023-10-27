@@ -1,0 +1,31 @@
+---
+- name: Remove FTP on Server
+  hosts: localhost
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: vsftpd service stop
+      service:
+        name: vsftpd
+        state: stopped
+
+    - name: Remove VSFTPD
+      yum:
+        name: vsftpd
+        state: absent
+
+    # - name: remove /srv/ftp/pub/
+    #   shell: "{{ item }}"
+    #   with_items:
+    #     - "rm -r /srv/ftp/pub/"
+
+- name: Remove FTP on Client
+  hosts: linux
+  gather_facts: no
+  become: yes
+  tasks: 
+    - name: Remove ncftp
+      yum:
+        name: ncftp
+        state: absent

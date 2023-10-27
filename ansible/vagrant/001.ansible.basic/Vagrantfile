@@ -1,0 +1,83 @@
+Vagrant.configure("2") do |config|
+    # Server
+    config.vm.define "server" do |cfg|
+        cfg.vm.box = "starboard/ubuntu-arm64-20.04.5"
+        cfg.vm.box_version = "20221120.20.40.0"
+        cfg.vm.box_download_insecure = true
+        cfg.vm.hostname = "server"
+        cfg.vm.network "private_network", ip: "172.16.74.100"
+        # cfg.vm.network "forwarded_port", guest: 22, host: 60010, protocol: "tcp", auto_correct: true, id: "ssh"
+        cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+        cfg.vm.provision "shell", inline: "apt update -y && apt install net-tools ansible -y"
+        cfg.vm.provision "file", source: "ansible_env_ready.yml", destination: "ansible_env_ready.yml"
+        cfg.vm.provision "shell", inline: "ansible-playbook ansible_env_ready.yml"
+        cfg.vm.provider "vmware_desktop" do |v|
+            v.ssh_info_public = true
+            v.gui = true
+            v.linked_clone = false
+            # v.vmx["ethernet0.virtualdev"] = "vmxnet3"
+            v.vmx["memsize"] = "1024"
+            v.vmx["numvcpus"] = "2"
+        end
+    end
+
+    # Node01
+    config.vm.define "node01" do |cfg|
+        cfg.vm.box = "starboard/ubuntu-arm64-20.04.5"
+        cfg.vm.box_version = "20221120.20.40.0"
+        cfg.vm.box_download_insecure = true
+        cfg.vm.hostname = "node01"
+        cfg.vm.network "private_network", ip: "172.16.74.101"
+        # cfg.vm.network "forwarded_port", guest: 22, host: 60011, protocol: "tcp", auto_correct: true, id: "ssh"
+        cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+        cfg.vm.provision "shell", inline: "apt update -y && apt install net-tools -y"
+        cfg.vm.provider "vmware_desktop" do |v|
+            v.ssh_info_public = true
+            v.gui = true
+            v.linked_clone = false
+            # v.vmx["ethernet0.virtualdev"] = "vmxnet3"
+            v.vmx["memsize"] = "1024"
+            v.vmx["numvcpus"] = "2"
+        end
+    end
+
+    # Node02
+    config.vm.define "node02" do |cfg|
+        cfg.vm.box = "starboard/ubuntu-arm64-20.04.5"
+        cfg.vm.box_version = "20221120.20.40.0"
+        cfg.vm.box_download_insecure = true
+        cfg.vm.hostname = "node02"
+        cfg.vm.network "private_network", ip: "172.16.74.102"
+        # cfg.vm.network "forwarded_port", guest: 22, host: 60012, protocol: "tcp", auto_correct: true
+        cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+        cfg.vm.provision "shell", inline: "apt update -y && apt install net-tools -y"
+        cfg.vm.provider "vmware_desktop" do |v|
+            v.ssh_info_public = true
+            v.gui = true
+            v.linked_clone = false
+            # v.vmx["ethernet0.virtualdev"] = "vmxnet3"
+            v.vmx["memsize"] = "1024"
+            v.vmx["numvcpus"] = "2"
+        end
+    end
+
+    # Node03
+    config.vm.define "node03" do |cfg|
+        cfg.vm.box = "starboard/ubuntu-arm64-20.04.5"
+        cfg.vm.box_version = "20221120.20.40.0"
+        cfg.vm.box_download_insecure = true
+        cfg.vm.hostname = "node03"
+        cfg.vm.network "private_network", ip: "172.16.74.103"
+        # cfg.vm.network "forwarded_port", guest: 22, host: 60013, protocol: "tcp", auto_correct: true
+        cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+        cfg.vm.provision "shell", inline: "apt update -y && apt install net-tools -y"
+        cfg.vm.provider "vmware_desktop" do |v|
+            v.ssh_info_public = true
+            v.gui = true
+            v.linked_clone = false
+            # v.vmx["ethernet0.virtualdev"] = "vmxnet3"
+            v.vmx["memsize"] = "1024"
+            v.vmx["numvcpus"] = "2"
+        end
+    end
+end

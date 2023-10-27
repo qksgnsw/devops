@@ -1,0 +1,29 @@
+---
+- name: Install nginx on linux
+  hosts: linux
+  gather_facts: no  # 노드 정보 모으기 안함
+  become: yes  # nginx 설치 시 sudo 권한이 필요하다.
+
+  tasks:
+    # Centos에서 필요
+    # - name: Install epel-release
+    #   yum:
+    #     name: epel-release
+    #     state: latest
+
+    - name: Install nginx web server
+      yum:
+        name: nginx
+        state: present
+
+    - name: upload default index.html for web server
+      get_url:
+        url: https://www.nginx.com
+        dest: /usr/share/nginx/html/
+        mode: 0644
+
+    - name: start nginx web server
+      service:
+        name: nginx
+        state: started
+...

@@ -1,0 +1,46 @@
+---
+- name: Setup for FTP server
+  hosts: localhost
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: Install VSFTPD on Server
+      yum:
+        name: vsftpd
+        state: present
+    - name: VSFTPD env for anonymous
+      shell: "{{ item }}"
+      with_items:
+        - "sed -i -e 's/anonymous_enable=NO/anonymous_enable=YES/g' /etc/vsftpd.conf"
+        - "sed -i -e 's/#anon_upload_enable=YES/anon_upload_enable=YES/g' /etc/vsftpd.conf"
+        - "sed -i -e 's/#anon_mkdir_write_enable=YES/anon_mkdir_write_enable=YES/g' /etc/vsftpd.conf"
+    - name: mkdir /srv/ftp/pub/ and chown and chmod
+      shell: "{{ item }}"
+      with_items:
+        - "mkdir -p /srv/ftp/pub/"
+        - "chown ftp.ftp /srv/ftp/pub/"
+        - "chmod 777 /srv/ftp/pub/"
+    - name: vsftpd service restart
+      become: yes
+      service:
+        name: vsftpd
+        state: started
+
+- name: Setup for ftp clients
+  hosts: linux
+  gather_facts: no
+  become: yes
+  tasks:
+    # - name: ncftp download
+    #   get_url:
+    #     url: https://rpmfind.net/linux/epel/7/x86_64/Packages/n/ncftp-3.2.5-7.el7.x86_64.rpm
+    #     dest: /home/vagrant/ncftp.rpm
+    # - name: Install ftp client
+    #   yum:
+    #     name: /home/vagrant/ncftp.rpm
+    #     state: present
+    - name: Install ncftp on Nodes
+      yum:
+        name: ncftp
+        state: present
+...

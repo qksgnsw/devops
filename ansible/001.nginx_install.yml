@@ -1,0 +1,24 @@
+# 앤서블 플레이북 시작. 야믈 파일임을 명시한다.
+---
+
+# 플레이북 이름 지정. 필수는 아니지만 플레이북의 목적을 확실히 밝히는 것이 좋다.
+- name: Install nginx on linux
+
+# 앞 실습에서 /etc/ansible/hosts 파일에 각 노드들을 nginx로 그룹화해 놓았다.
+  hosts: nginx
+
+# 각 노드의 불필요한 정보 수집을 하지 않는 옵션. 자세한 것은 플레이북 동적 구성에서 학습
+  gather_facts: no
+
+# 실제 플레이북 수행되는 태스크
+  tasks:
+
+# 각 태스크마다 명시적으로 이름을 넣어주는 것이 좋다.
+    - name: install epel-release
+      yum: name=epel-release state=latest
+    - name: install nginx web server
+      yum: name=nginx state=present
+    - name: upload default index.html for web server
+      get_url: url=https://www.nginx.com dest=/usr/share/nginx/html/ mode=0644
+    - name: start nginx web server
+      service: name=nginx state=started

@@ -1,0 +1,7 @@
+Vagrant.configure("2") do |config|
+
+    # Server
+    config.vm.define "server" do |cfg|
+        config.vm.box = "gusztavvargadr/windows-10"
+    end
+end

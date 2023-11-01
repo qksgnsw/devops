@@ -9,8 +9,8 @@ pip3 install boto3
 mkdir -p ~/.aws
 cat <<EOF >~/.aws/credentials
 [default]
-aws_access_key_id = AKIATR3SVK5LUMNXTA5Y
-aws_secret_access_key = bJjz/LEaYG4nNOfX2zqu3YSXzEEauY30+m2IHCBW
+aws_access_key_id = ## YOUR_KEY_ID
+aws_secret_access_key = ## YOUR_ACCESS_KEIY
 EOF
 
 cat <<EOF > /root/aws_user_check.py 

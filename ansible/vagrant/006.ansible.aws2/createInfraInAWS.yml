@@ -1,0 +1,82 @@
+---
+- hosts: localhost
+  gather_facts: False
+
+  tasks:
+
+    - name: create a VPC
+      ec2_vpc_net:
+        name: my-vpc
+        cidr_block: 10.0.0.0/16
+        region: ap-northeast-2
+      register: vpc
+    
+    - name: Create Internet gateway with tags
+      ec2_vpc_igw:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        state: present
+      register: igw
+
+    - name: Create subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        cidr: 10.0.0.0/24
+      register: subnet
+
+    - name: Set up public subnet route table
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        tags:
+          Name: Public
+        subnets:
+          - "{{ subnet.subnet.id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw.gateway_id }}"
+      register: route_table
+
+    - name: example using security group rule descriptions
+      ec2_group:
+        name: my-sg
+        description: sg with rule descriptions
+        region: ap-northeast-2
+        vpc_id: "{{ vpc.vpc.id }}"
+        rules:
+          - proto: tcp
+            ports:
+            - 80
+            cidr_ip: 0.0.0.0/0
+            rule_desc: allow all on port 80
+          - proto: tcp
+            ports:
+            - 22
+            cidr_ip: 0.0.0.0/0
+            rule_desc: allow all on port 22
+      register: sg
+    
+    - name: start an instance
+      ec2_instance:
+        name: my-ec2
+        region: ap-northeast-2
+        instance_type: t2.micro
+        image_id: ami-03a633fd8200146fb
+        vpc_subnet_id: "{{ subnet.subnet.id }}"
+        security_group: "{{ sg.group_id }}"
+        network:
+          assign_public_ip: true
+        user_data: |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+          

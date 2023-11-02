@@ -1,0 +1,27 @@
+Vagrant.configure("2") do |config|
+    # Server
+    config.vm.define "server" do |cfg|
+        cfg.vm.box = "starboard/ubuntu-arm64-20.04.5"
+        cfg.vm.box_version = "20221120.20.40.0"
+        cfg.vm.box_download_insecure = true
+        cfg.vm.hostname = "server"
+        cfg.vm.network "private_network", ip: "172.16.74.100"
+        # cfg.vm.network "forwarded_port", guest: 22, host: 60010, protocol: "tcp", auto_correct: true, id: "ssh"
+        cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+        cfg.vm.provision "shell", path: "setDefault.sh"
+        cfg.vm.provision "shell", inline: "ansible-galaxy collection install amazon.aws"
+        cfg.vm.provision "file", source: "credentials", destination: "~/.aws/credentials"
+        cfg.vm.provision "file", source: "ansible_default.yml", destination: "ansible_default.yml"
+        cfg.vm.provision "file", source: "createInfraInAWS.yml", destination: "createInfraInAWS.yml"
+        cfg.vm.provision "shell", inline: "ansible-playbook ansible_default.yml"
+        cfg.vm.provision "shell", inline: "ansible-playbook createInfraInAWS.yml"
+        cfg.vm.provider "vmware_desktop" do |v|
+            v.ssh_info_public = true
+            v.gui = true
+            v.linked_clone = false
+            # v.vmx["ethernet0.virtualdev"] = "vmxnet3"
+            v.vmx["memsize"] = "1024"
+            v.vmx["numvcpus"] = "2"
+        end
+    end
+end

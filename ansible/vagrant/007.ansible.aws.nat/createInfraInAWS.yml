@@ -1,0 +1,142 @@
+---
+- hosts: localhost
+  gather_facts: False
+
+  tasks:
+
+    - name: create a VPC
+      ec2_vpc_net:
+        name: my-vpc
+        cidr_block: 10.0.0.0/16
+        region: ap-northeast-2
+      register: vpc
+    
+    - name: Create Internet gateway with tags
+      ec2_vpc_igw:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        state: present
+      register: igw
+
+    - name: Create Public subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        az: ap-northeast-2a
+        cidr: 10.0.0.0/24
+      register: pubSubnet
+
+    - name: Create private subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        az: ap-northeast-2c
+        cidr: 10.0.1.0/24
+      register: privSubnet
+
+    - name: allocate a new elastic IP inside a VPC
+      ec2_eip:
+        region: ap-northeast-2
+        in_vpc: true
+        reuse_existing_ip_allowed: true
+      register: eip
+
+    - name: Create new nat gateway, using an EIP address  and wait for available status.
+      ec2_vpc_nat_gateway:
+        state: present
+        subnet_id: "{{ pubSubnet.subnet.id }}"
+        allocation_id: "{{ eip.allocation_id }}"
+        if_exist_do_not_create: true
+        wait: true
+        region: ap-northeast-2
+      register: nat
+
+    - name: Set up public subnet route table
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        tags:
+          Name: Public
+        subnets:
+          - "{{ pubSubnet.subnet.id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw.gateway_id }}"
+      register: pub_route_table
+
+    - name: Set up private subnet route table
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: ap-northeast-2
+        tags:
+          Name: Private
+        subnets:
+          - "{{ privSubnet.subnet.id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ nat.nat_gateway_id }}"
+      register: priv_route_table
+
+    - name: example using security group rule descriptions
+      ec2_group:
+        name: my-sg
+        description: sg with rule descriptions
+        region: ap-northeast-2
+        vpc_id: "{{ vpc.vpc.id }}"
+        rules:
+          - proto: tcp
+            ports:
+            - 80
+            cidr_ip: 0.0.0.0/0
+            rule_desc: allow all on port 80
+          - proto: tcp
+            ports:
+            - 22
+            cidr_ip: 0.0.0.0/0
+            rule_desc: allow all on port 22
+      register: sg
+    
+    - name: start an pub-instance
+      ec2_instance:
+        name: my-pub-ec2
+        region: ap-northeast-2
+        instance_type: t2.micro
+        image_id: ami-03a633fd8200146fb
+        vpc_subnet_id: "{{ pubSubnet.subnet.id }}"
+        security_group: "{{ sg.group_id }}"
+        network:
+          assign_public_ip: true
+        user_data: |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+
+    - name: start an priv-instance
+      ec2_instance:
+        name: my-priv-ec2
+        region: ap-northeast-2
+        instance_type: t2.micro
+        image_id: ami-03a633fd8200146fb
+        vpc_subnet_id: "{{ privSubnet.subnet.id }}"
+        security_group: "{{ sg.group_id }}"
+        user_data: |
+          #!/bin/bash
+          echo "password!" | passwd --stdin root
+          sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
+          sed -i "s/^PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+          systemctl restart sshd
+          yum update -y
+          yum install -y httpd.x86_64
+          systemctl start httpd.service
+          systemctl enable httpd.service
+          echo "<h1>Hello World from $(hostname -f)</h1>" > /var/www/html/index.html
+          

@@ -1,0 +1,9 @@
+---
+- name: Removes nginx on the nodes
+  hosts: nodes
+  become: yes
+
+  tasks:
+    - name: remove for Ubuntu
+      include_tasks: Ubuntu_remo.yml
+      when: ansible_distribution == "Ubuntu"

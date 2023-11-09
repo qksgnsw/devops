@@ -1,0 +1,38 @@
+---
+- name: Create authority between server and nodes
+  hosts: nodes
+  connection: local
+  # 한개씩 천천히 진행
+  serial: 1
+  gather_facts: no
+  vars:
+    ansible_password: vagrant
+
+  tasks:
+    - name: ssh-keyscan for known_hosts file
+      # ansible_host 는 매직변수: /etc/ansible/hosts 파일에 있는 노드
+      command: /usr/bin/ssh-keyscan -t ecdsa {{ ansible_host }}
+      register: keyscan
+
+    - name: input key
+      lineinfile:
+        path: ~/.ssh/known_hosts
+        line: "{{ item }}"
+        create: yes
+      with_items:
+        # keyscan에서 받는 리턴값 중 하나.
+        - "{{ keyscan.stdout_lines }}"
+
+    - name: ssh-keygen for authorized_keys file
+      command: "ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N ''"
+      # 여러 번 수행 시 태스크 중단되는 것을 방지
+      ignore_errors: yes
+      # 한 번만 키 생성
+      run_once: true
+
+    - name: input key for each node
+      connection: ssh
+      authorized_key:
+        user: vagrant
+        state: present
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub')}}"

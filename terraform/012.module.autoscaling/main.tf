@@ -233,53 +233,71 @@ resource "aws_autoscaling_group" "asg" {
 }
 
 # autoscaling plicy
-resource "aws_autoscaling_policy" "example" {
+resource "aws_autoscaling_policy" "asg_policy" {
   autoscaling_group_name = aws_autoscaling_group.asg.name
   name                   = "${local.name}_asg_policy"
-  policy_type            = "TargetTrackingScaling"
+
+  adjustment_type         = "ChangeInCapacity"  // 조정 유형 ChangeInCapacity, ExactCapacity, and PercentChangeInCapacity.
+  # scaling_adjustment      = 1  // 인스턴스 개수를 증가시킬 양 -> SimpleScaling에서만 지원
+  # cooldown                = 300  // 스케일링 이벤트 간의 대기 시간(초) -> SimpleScaling에서만 지원
+
+  // CloudWatch 알람을 통해 CPU 사용률을 확인
+  metric_aggregation_type = "Average"  // 지표 집계 유형
+  # "SimpleScaling", "StepScaling", "TargetTrackingScaling", or "PredictiveScaling"
+  policy_type             = "TargetTrackingScaling"  // 정책 유형
+
+  // CloudWatch 지표 설정
   target_tracking_configuration {
-    target_value = 100
-    customized_metric_specification {
-      metrics {
-        label = "Get the queue size (the number of messages waiting to be processed)"
-        id    = "m1"
-        metric_stat {
-          metric {
-            namespace   = "AWS/SQS"
-            metric_name = "ApproximateNumberOfMessagesVisible"
-            dimensions {
-              name  = "QueueName"
-              value = "my-queue"
-            }
-          }
-          stat = "Sum"
-        }
-        return_data = false
-      }
-      metrics {
-        label = "Get the group size (the number of InService instances)"
-        id    = "m2"
-        metric_stat {
-          metric {
-            namespace   = "AWS/AutoScaling"
-            metric_name = "GroupInServiceInstances"
-            dimensions {
-              name  = "AutoScalingGroupName"
-              value = "my-asg"
-            }
-          }
-          stat = "Average"
-        }
-        return_data = false
-      }
-      metrics {
-        label       = "Calculate the backlog per instance"
-        id          = "e1"
-        expression  = "m1 / m2"
-        return_data = true
-      }
+    predefined_metric_specification {
+      # ASGTotalCPUUtilization, ASGTotalNetworkIn, ASGTotalNetworkOut, or ALBTargetGroupRequestCount
+      predefined_metric_type = "ASGAverageCPUUtilization"  // CloudWatch에서 제공하는 미리 정의된 CPU 사용률 지표
     }
+    target_value = 50.0  // CPU 사용률 목표값 (50%)
   }
+  
+  # target_tracking_configuration {
+  #   target_value = 100
+  #   customized_metric_specification {
+  #     metrics {
+  #       label = "Get the queue size (the number of messages waiting to be processed)"
+  #       id    = "m1"
+  #       metric_stat {
+  #         metric {
+  #           namespace   = "AWS/SQS"
+  #           metric_name = "ApproximateNumberOfMessagesVisible"
+  #           dimensions {
+  #             name  = "QueueName"
+  #             value = "my-queue"
+  #           }
+  #         }
+  #         stat = "Sum"
+  #       }
+  #       return_data = false
+  #     }
+  #     metrics {
+  #       label = "Get the group size (the number of InService instances)"
+  #       id    = "m2"
+  #       metric_stat {
+  #         metric {
+  #           namespace   = "AWS/AutoScaling"
+  #           metric_name = "GroupInServiceInstances"
+  #           dimensions {
+  #             name  = "AutoScalingGroupName"
+  #             value = "my-asg"
+  #           }
+  #         }
+  #         stat = "Average"
+  #       }
+  #       return_data = false
+  #     }
+  #     metrics {
+  #       label       = "Calculate the backlog per instance"
+  #       id          = "e1"
+  #       expression  = "m1 / m2"
+  #       return_data = true
+  #     }
+  #   }
+  # }
 }
 
 output "info" {

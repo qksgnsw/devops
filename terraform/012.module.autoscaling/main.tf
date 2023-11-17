@@ -222,7 +222,7 @@ resource "aws_lb_listener" "listener" {
 
 # 오토스케일링 그룹 설정
 resource "aws_autoscaling_group" "asg" {
-  name_prefix          = "asg-"
+  name_prefix          = "${local.name}-asg-"
   launch_configuration = aws_launch_configuration.as_templete.name
   min_size             = 2
   max_size             = 4
@@ -235,7 +235,7 @@ resource "aws_autoscaling_group" "asg" {
 # autoscaling plicy
 resource "aws_autoscaling_policy" "example" {
   autoscaling_group_name = aws_autoscaling_group.asg.name
-  name                   = "asg_policy"
+  name                   = "${local.name}_asg_policy"
   policy_type            = "TargetTrackingScaling"
   target_tracking_configuration {
     target_value = 100
@@ -303,7 +303,6 @@ output "info" {
       dns_name           = aws_lb.alb.dns_name
       load_balancer_type = aws_lb.alb.load_balancer_type
       subnets            = aws_lb.alb.subnets
-      zone_id            = aws_lb.alb.zone_id
     }
     asg = {
       availability_zones = aws_autoscaling_group.asg.availability_zones

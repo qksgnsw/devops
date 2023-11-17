@@ -254,50 +254,6 @@ resource "aws_autoscaling_policy" "asg_policy" {
     }
     target_value = 50.0  // CPU 사용률 목표값 (50%)
   }
-  
-  # target_tracking_configuration {
-  #   target_value = 100
-  #   customized_metric_specification {
-  #     metrics {
-  #       label = "Get the queue size (the number of messages waiting to be processed)"
-  #       id    = "m1"
-  #       metric_stat {
-  #         metric {
-  #           namespace   = "AWS/SQS"
-  #           metric_name = "ApproximateNumberOfMessagesVisible"
-  #           dimensions {
-  #             name  = "QueueName"
-  #             value = "my-queue"
-  #           }
-  #         }
-  #         stat = "Sum"
-  #       }
-  #       return_data = false
-  #     }
-  #     metrics {
-  #       label = "Get the group size (the number of InService instances)"
-  #       id    = "m2"
-  #       metric_stat {
-  #         metric {
-  #           namespace   = "AWS/AutoScaling"
-  #           metric_name = "GroupInServiceInstances"
-  #           dimensions {
-  #             name  = "AutoScalingGroupName"
-  #             value = "my-asg"
-  #           }
-  #         }
-  #         stat = "Average"
-  #       }
-  #       return_data = false
-  #     }
-  #     metrics {
-  #       label       = "Calculate the backlog per instance"
-  #       id          = "e1"
-  #       expression  = "m1 / m2"
-  #       return_data = true
-  #     }
-  #   }
-  # }
 }
 
 output "info" {

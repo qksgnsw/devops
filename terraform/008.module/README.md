@@ -4,7 +4,9 @@
 
 
 
-[vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc)
-[sg](https://github.com/terraform-aws-modules/terraform-aws-security-group)
-[ec2](https://github.com/terraform-aws-modules/terraform-aws-ec2-instance/)
-[alb](https://github.com/terraform-aws-modules/terraform-aws-alb)
+- [vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc)
+- [sg](https://github.com/terraform-aws-modules/terraform-aws-security-group)
+- [ec2](https://github.com/terraform-aws-modules/terraform-aws-ec2-instance/)
+- [alb](https://github.com/terraform-aws-modules/terraform-aws-alb)
+- [elb](https://github.com/terraform-aws-modules/terraform-aws-elb)
+- [auto-scaling](https://github.com/terraform-aws-modules/terraform-aws-autoscaling)

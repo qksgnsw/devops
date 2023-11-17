@@ -16,13 +16,13 @@ resource "aws_vpc" "my_vpc" {
 }
 
 resource "aws_subnet" "subnet_a" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.0.0/24"
+  vpc_id            = aws_vpc.my_vpc.id
+  cidr_block        = "10.0.0.0/24"
   availability_zone = "ap-northeast-2a"
 }
 
 resource "aws_subnet" "subnet_c" {
-  vpc_id     = aws_vpc.my_vpc.id
-  cidr_block = "10.0.2.0/24"
+  vpc_id            = aws_vpc.my_vpc.id
+  cidr_block        = "10.0.2.0/24"
   availability_zone = "ap-northeast-2c"
 }

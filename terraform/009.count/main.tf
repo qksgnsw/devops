@@ -52,25 +52,25 @@ resource "aws_iam_user" "for_each_user" {
 }
 
 output "for_each_user" {
-    value = values(aws_iam_user.for_each_user).*.arn
+  value = values(aws_iam_user.for_each_user).*.arn
 }
 
 resource "aws_iam_user" "foreachandmap" {
   for_each = {
     kim = {
-        name        = "kim"
-        level       = "admin"
-        department  = "dev"
+      name       = "kim"
+      level      = "admin"
+      department = "dev"
     }
     lee = {
-        name        = "lee"
-        level       = "A"
-        department  = "dev2"
+      name       = "lee"
+      level      = "A"
+      department = "dev2"
     }
     park = {
-        name        = "park"
-        level       = "B"
-        department  = "dev3"
+      name       = "park"
+      level      = "B"
+      department = "dev3"
     }
   }
   name = each.key
@@ -78,5 +78,5 @@ resource "aws_iam_user" "foreachandmap" {
 }
 
 output "foreachandmap" {
-    value = values(aws_iam_user.foreachandmap).*.arn
+  value = values(aws_iam_user.foreachandmap).*.arn
 }

@@ -237,22 +237,22 @@ resource "aws_autoscaling_policy" "asg_policy" {
   autoscaling_group_name = aws_autoscaling_group.asg.name
   name                   = "${local.name}_asg_policy"
 
-  adjustment_type         = "ChangeInCapacity"  // 조정 유형 ChangeInCapacity, ExactCapacity, and PercentChangeInCapacity.
+  adjustment_type = "ChangeInCapacity" // 조정 유형 ChangeInCapacity, ExactCapacity, and PercentChangeInCapacity.
   # scaling_adjustment      = 1  // 인스턴스 개수를 증가시킬 양 -> SimpleScaling에서만 지원
   # cooldown                = 300  // 스케일링 이벤트 간의 대기 시간(초) -> SimpleScaling에서만 지원
 
   // CloudWatch 알람을 통해 CPU 사용률을 확인
-  metric_aggregation_type = "Average"  // 지표 집계 유형
+  metric_aggregation_type = "Average" // 지표 집계 유형
   # "SimpleScaling", "StepScaling", "TargetTrackingScaling", or "PredictiveScaling"
-  policy_type             = "TargetTrackingScaling"  // 정책 유형
+  policy_type = "TargetTrackingScaling" // 정책 유형
 
   // CloudWatch 지표 설정
   target_tracking_configuration {
     predefined_metric_specification {
       # ASGTotalCPUUtilization, ASGTotalNetworkIn, ASGTotalNetworkOut, or ALBTargetGroupRequestCount
-      predefined_metric_type = "ASGAverageCPUUtilization"  // CloudWatch에서 제공하는 미리 정의된 CPU 사용률 지표
+      predefined_metric_type = "ASGAverageCPUUtilization" // CloudWatch에서 제공하는 미리 정의된 CPU 사용률 지표
     }
-    target_value = 50.0  // CPU 사용률 목표값 (50%)
+    target_value = 50.0 // CPU 사용률 목표값 (50%)
   }
 }
 
@@ -280,8 +280,8 @@ output "info" {
     }
     asg = {
       availability_zones = aws_autoscaling_group.asg.availability_zones
-      max_size = aws_autoscaling_group.asg.max_size
-      min_size = aws_autoscaling_group.asg.min_size
+      max_size           = aws_autoscaling_group.asg.max_size
+      min_size           = aws_autoscaling_group.asg.min_size
     }
   }
 }

@@ -170,10 +170,10 @@ resource "aws_security_group" "my_sg" {
 # EC2 인스턴스 (가용 영역 a) 생성
 resource "aws_instance" "ec2_instance_a" {
   ami           = data.aws_ami.amazon_linux2.image_id # 원하는 AMI ID로 변경
-  instance_type = "t2.micro"              # 원하는 인스턴스 유형으로 변경
+  instance_type = "t2.micro"                          # 원하는 인스턴스 유형으로 변경
   subnet_id     = aws_subnet.subnet_a.id
 
-  user_data     = <<-EOF
+  user_data                   = <<-EOF
                #!/bin/bash
           echo "password!" | passwd --stdin root
           sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
@@ -196,7 +196,7 @@ resource "aws_instance" "ec2_instance_a" {
 # EC2 인스턴스 (가용 영역 c) 생성
 resource "aws_instance" "ec2_instance_c" {
   ami           = data.aws_ami.amazon_linux2.image_id # 원하는 AMI ID로 변경
-  instance_type = "t2.micro"              # 원하는 인스턴스 유형으로 변경
+  instance_type = "t2.micro"                          # 원하는 인스턴스 유형으로 변경
   subnet_id     = aws_subnet.subnet_c.id
 
   user_data = <<-EOF

@@ -238,17 +238,17 @@ output "privweb_info" {
 }
 
 module "elb_http" {
-  source  = "terraform-aws-modules/elb/aws"
+  source = "terraform-aws-modules/elb/aws"
 
   name = local.name
 
   # depends_on = [module.vpc, module.privWeb]
 
-  subnets         = module.vpc.public_subnets
+  subnets = module.vpc.public_subnets
   security_groups = [
-      module.all_ingress_sg.security_group_id
-    ]
-  internal        = false
+    module.all_ingress_sg.security_group_id
+  ]
+  internal = false
 
   listener = [
     {
@@ -280,10 +280,10 @@ module "elb_http" {
 
   // ELB attachments
   number_of_instances = 2
-  instances           = [ for k in module.privWeb: k.id ]
+  instances           = [for k in module.privWeb : k.id]
 
   tags = merge(
-    {Name: "${local.name}-elb"},
+    { Name : "${local.name}-elb" },
     local.tags
   )
 }

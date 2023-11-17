@@ -1,5 +1,5 @@
 locals {
-    create_vpc = var.create_vpc
+  create_vpc = var.create_vpc
 }
 
 resource "aws_vpc" "this" {

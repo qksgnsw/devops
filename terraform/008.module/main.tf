@@ -1,5 +1,5 @@
 provider "aws" {
-  
+
 }
 
 # 사용할 수 있는 가용 영역
@@ -8,13 +8,13 @@ data "aws_availability_zones" "available" {
 }
 
 # 로컬 변수 선언
-locals {  
-  name     = "${basename(path.cwd)}"
+locals {
+  name     = basename(path.cwd)
   env      = "Dev"
   vpc_cidr = "10.0.0.0/16"
   region   = "ap-northeast-2"
   # 사용가능한 가용영역을 list형태로 slice
-  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  azs = slice(data.aws_availability_zones.available.names, 0, 3)
 
   user_data = <<-EOT
   #!/bin/bash
@@ -30,8 +30,8 @@ locals {
   EOT
 
   tags = {
-    Project_Name    = local.name
-    Env             = local.env
+    Project_Name = local.name
+    Env          = local.env
   }
 }
 
@@ -43,85 +43,85 @@ module "vpc" {
 
   azs             = local.azs
   private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  public_subnets  = ["10.0.101.0/24","10.0.102.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
 
   enable_nat_gateway = true
   enable_vpn_gateway = false
 
   tags = merge(
-    {Name: "${local.name}-vpc"},
+    { Name : "${local.name}-vpc" },
     local.tags
   )
 }
 
 module "all_ingress_sg" {
   source = "terraform-aws-modules/security-group/aws"
-  
-  name = "all_ingress_sg"
+
+  name        = "all_ingress_sg"
   description = "This is an SG that allows all ingress."
-  vpc_id = module.vpc.vpc_id
+  vpc_id      = module.vpc.vpc_id
 
-  egress_rules = [ "all-all" ]
+  egress_rules = ["all-all"]
 
-  ingress_cidr_blocks  = ["0.0.0.0/0"]
+  ingress_cidr_blocks = ["0.0.0.0/0"]
 
-  ingress_rules = [ 
+  ingress_rules = [
     "all-icmp",
     "http-80-tcp",
     "https-443-tcp"
-    ]
+  ]
 
   tags = merge(
-    {Name: "${local.name}-all_ingress_sg"},
+    { Name : "${local.name}-all_ingress_sg" },
     local.tags
   )
 }
 
 module "priv_ingress_sg" {
   source = "terraform-aws-modules/security-group/aws"
-  
-  name = "priv_ingress_sg"
+
+  name        = "priv_ingress_sg"
   description = "This is an SG that allows private ingress."
-  vpc_id = module.vpc.vpc_id
+  vpc_id      = module.vpc.vpc_id
 
-  egress_rules = [ "all-all" ]
+  egress_rules = ["all-all"]
 
-  ingress_cidr_blocks  = [
+  ingress_cidr_blocks = [
     local.vpc_cidr
-    ]
+  ]
 
-  ingress_rules = [ 
+  ingress_rules = [
     "all-icmp",
     "http-80-tcp",
     "https-443-tcp"
-    ]
+  ]
 
   tags = merge(
-    {Name: "${local.name}-priv_ingress_sg"},
+    { Name : "${local.name}-priv_ingress_sg" },
     local.tags
   )
 }
 
 module "private_sg" {
   source = "terraform-aws-modules/security-group/aws"
-  
-  name = "private_sg"
+
+  name        = "private_sg"
   description = "This is an SG that allows private network."
-  vpc_id = module.vpc.vpc_id
+  vpc_id      = module.vpc.vpc_id
 
-  egress_rules = [ "all-all" ]
+  egress_rules = ["all-all"]
 
-  ingress_cidr_blocks  = [
+  ingress_cidr_blocks = [
     module.vpc.vpc_cidr_block,
     "0.0.0.0/0" # test
-    ]
+  ]
 
-  ingress_rules = [ 
+  ingress_rules = [
     "ssh-tcp"
-    ]
+  ]
 
   tags = merge(
-    {Name: "${local.name}-private_sg"},
+    { Name : "${local.name}-private_sg" },
     local.tags
   )
 }
@@ -141,7 +141,7 @@ data "aws_ami" "amazon_linux2" {
 }
 
 module "bastionEC2" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
+  source = "terraform-aws-modules/ec2-instance/aws"
 
   for_each = toset(["1", "2"])
 
@@ -151,39 +151,39 @@ module "bastionEC2" {
   monitoring                  = true
   associate_public_ip_address = true
 
-  vpc_security_group_ids      = [
-      module.all_ingress_sg.security_group_id,
-      module.private_sg.security_group_id
-    ]
-    
-  user_data_base64            = base64encode(local.user_data)
+  vpc_security_group_ids = [
+    module.all_ingress_sg.security_group_id,
+    module.private_sg.security_group_id
+  ]
+
+  user_data_base64 = base64encode(local.user_data)
 
   tags = merge(
-      {Name: "${local.name}-bastionEC2-${each.key}"},
-      local.tags
-    )
+    { Name : "${local.name}-bastionEC2-${each.key}" },
+    local.tags
+  )
 }
 
 module "privWeb" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
+  source = "terraform-aws-modules/ec2-instance/aws"
 
   for_each = toset(["1", "2"])
 
-  ami                         = data.aws_ami.amazon_linux2.id
-  subnet_id                   = module.vpc.private_subnets[0]
-  instance_type               = "t2.micro"
-  monitoring                  = true
+  ami           = data.aws_ami.amazon_linux2.id
+  subnet_id     = module.vpc.private_subnets[0]
+  instance_type = "t2.micro"
+  monitoring    = true
   # associate_public_ip_address = true
 
-  vpc_security_group_ids      = [
-      module.priv_ingress_sg.security_group_id,
-      module.private_sg.security_group_id
-    ]
-    
-  user_data_base64            = base64encode(local.user_data)
+  vpc_security_group_ids = [
+    module.priv_ingress_sg.security_group_id,
+    module.private_sg.security_group_id
+  ]
+
+  user_data_base64 = base64encode(local.user_data)
 
   tags = merge(
-      {Name: "${local.name}-privWeb-${each.key}"},
-      local.tags
-    )
+    { Name : "${local.name}-privWeb-${each.key}" },
+    local.tags
+  )
 }

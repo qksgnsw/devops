@@ -2,20 +2,20 @@
 terraform {
   required_providers {
     local = {
-        source = "hashicorp/local"
-        version = "2.4.0"
+      source  = "hashicorp/local"
+      version = "2.4.0"
     }
   }
 }
 
 # Provider Block
 provider "local" {
-  
+
 }
 
 # Resouce Block
 resource "local_file" "resouce_id" {
-  content = "This is Text text."
+  content  = "This is Text text."
   filename = "${path.module}/test.txt"
 }
 
@@ -26,7 +26,7 @@ data "local_file" "data_id" {
 
 # Output Block
 output "output_key" {
-    value = data.local_file.data_id
+  value = data.local_file.data_id
 }
 
 provider "aws" {
@@ -34,13 +34,13 @@ provider "aws" {
 }
 
 resource "aws_vpc" "main" {
-  cidr_block = "10.1.0.0/16"
+  cidr_block       = "10.1.0.0/16"
   instance_tenancy = "default"
 
   tags = {
-    Name= "main"
-    Environment= "Dev"
-    Change = "1"
+    Name        = "main"
+    Environment = "Dev"
+    Change      = "1"
   }
 }
 

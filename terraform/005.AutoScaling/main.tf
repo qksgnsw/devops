@@ -237,10 +237,10 @@ resource "aws_security_group" "private_sg" {
 # EC2 인스턴스 (가용 영역 a) 생성
 resource "aws_instance" "bastionA" {
   ami           = data.aws_ami.amazon_linux2.image_id # 원하는 AMI ID로 변경
-  instance_type = "t2.micro"              # 원하는 인스턴스 유형으로 변경
+  instance_type = "t2.micro"                          # 원하는 인스턴스 유형으로 변경
   subnet_id     = aws_subnet.subnet_a1.id
 
-  user_data     = <<-EOF
+  user_data                   = <<-EOF
                #!/bin/bash
               echo "password!" | passwd --stdin root
               sed -i "s/^#PermitRootLogin yes/PermitRootLogin yes/g" /etc/ssh/sshd_config
@@ -298,10 +298,10 @@ resource "aws_security_group" "asg_sg" {
 
 # 오토스케일링으로 만들어질 ec2들 설정
 resource "aws_launch_configuration" "as_templete" {
-  name_prefix = "asg-"
-  image_id = data.aws_ami.amazon_linux2.image_id # 사용할 AMI ID를 지정합니다.
-  instance_type = "t2.micro" # 인스턴스 유형 선택
-  
+  name_prefix   = "asg-"
+  image_id      = data.aws_ami.amazon_linux2.image_id # 사용할 AMI ID를 지정합니다.
+  instance_type = "t2.micro"                          # 인스턴스 유형 선택
+
   security_groups = [aws_security_group.private_sg.id]
 
   user_data = <<-EOF
@@ -356,14 +356,14 @@ resource "aws_lb_listener" "listener" {
 
 # 오토스케일링 그룹 설정
 resource "aws_autoscaling_group" "asg" {
-  name_prefix = "asg-"
+  name_prefix          = "asg-"
   launch_configuration = aws_launch_configuration.as_templete.name
-  min_size = 2
-  max_size = 4
-  desired_capacity = 2
-  vpc_zone_identifier = [aws_subnet.subnet_c1.id, aws_subnet.subnet_c2.id] # 원하는 서브넷 ID 지정
-  health_check_type = "ELB"
-  target_group_arns = [aws_lb_target_group.tg.arn] # ALB 리소스 이름 지정
+  min_size             = 2
+  max_size             = 4
+  desired_capacity     = 2
+  vpc_zone_identifier  = [aws_subnet.subnet_c1.id, aws_subnet.subnet_c2.id] # 원하는 서브넷 ID 지정
+  health_check_type    = "ELB"
+  target_group_arns    = [aws_lb_target_group.tg.arn] # ALB 리소스 이름 지정
 }
 
 # autoscaling plicy

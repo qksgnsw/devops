@@ -61,75 +61,82 @@ module "vpc" {
   )
 }
 
-module "all_ingress_sg" {
+module "bastion_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
-  name        = "all_ingress_sg"
-  description = "This is an SG that allows all ingress."
+  name        = "bastion_sg"
+  description = "This is an bastion_sg."
   vpc_id      = module.vpc.vpc_id
 
-  egress_rules = ["all-all"]
+  egress_rules = [
+    "all-icmp",
+    "ssh-tcp"
+  ]
 
   ingress_cidr_blocks = ["0.0.0.0/0"]
 
   ingress_rules = [
     "all-icmp",
-    "http-80-tcp",
-    "https-443-tcp"
+    "ssh-tcp"
+    # "http-80-tcp",
+    # "https-443-tcp"
   ]
 
   tags = merge(
-    { Name : "${local.name}-all_ingress_sg" },
+    { Name : "${local.name}-bastion_sg" },
     local.tags
   )
 }
 
-module "priv_ingress_sg" {
+module "internal_ec2_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
-  name        = "priv_ingress_sg"
-  description = "This is an SG that allows private ingress."
+  name        = "internal_ec2_sg"
+  description = "This is an SG of internal_ec2_sg."
   vpc_id      = module.vpc.vpc_id
 
   egress_rules = ["all-all"]
+  # egress_cidr_blocks = [
+  #   local.vpc_cidr
+  # ]
 
   ingress_cidr_blocks = [
-    local.vpc_cidr,
-    "0.0.0.0/0" # test
+    local.vpc_cidr
+    # "0.0.0.0/0" # test
   ]
-
   ingress_rules = [
     "all-icmp",
+    "ssh-tcp",
     "http-80-tcp",
     "https-443-tcp"
   ]
 
   tags = merge(
-    { Name : "${local.name}-priv_ingress_sg" },
+    { Name : "${local.name}-internal_ec2_sg" },
     local.tags
   )
 }
 
-module "private_sg" {
+module "alb_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
-  name        = "private_sg"
-  description = "This is an SG that allows private network."
+  name        = "alb_sg"
+  description = "This is an SG of alb_sg."
   vpc_id      = module.vpc.vpc_id
 
   egress_rules = ["all-all"]
 
   ingress_cidr_blocks = [
-    module.vpc.vpc_cidr_block,
-    "0.0.0.0/0" # test
+    "0.0.0.0/0"
   ]
 
   ingress_rules = [
-    "ssh-tcp"
+    "http-80-tcp",
+    "https-443-tcp"
   ]
 
   tags = merge(
-    { Name : "${local.name}-private_sg" },
+    { Name : "${local.name}-alb_sg" },
     local.tags
   )
 }
@@ -160,8 +167,8 @@ module "bastionEC2" {
   associate_public_ip_address = true
 
   vpc_security_group_ids = [
-    module.all_ingress_sg.security_group_id,
-    module.private_sg.security_group_id
+    module.bastion_sg.security_group_id,
+    module.internal_ec2_sg.security_group_id
   ]
 
   user_data_base64 = base64encode(local.user_data)
@@ -178,7 +185,7 @@ resource "aws_launch_configuration" "as_templete" {
   image_id      = data.aws_ami.amazon_linux2.id # 사용할 AMI ID를 지정합니다.
   instance_type = "t2.micro"                    # 인스턴스 유형 선택
 
-  security_groups = [module.priv_ingress_sg.security_group_id]
+  security_groups = [module.internal_ec2_sg.security_group_id]
 
   user_data_base64 = base64encode(local.user_data)
 }
@@ -188,7 +195,7 @@ resource "aws_lb" "alb" {
   name               = "${local.name}-lb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [module.all_ingress_sg.security_group_id]
+  security_groups    = [module.alb_sg.security_group_id]
   subnets            = [for k, v in module.vpc.public_subnets : v]
 
   # 삭제 방지

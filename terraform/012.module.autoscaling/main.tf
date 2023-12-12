@@ -199,7 +199,7 @@ resource "aws_lb" "alb" {
   subnets            = [for k, v in module.vpc.public_subnets : v]
 
   # 삭제 방지
-  # enable_deletion_protection = true
+  enable_deletion_protection = false
 
   tags = merge(
     { Name : "${local.name}-alb" },

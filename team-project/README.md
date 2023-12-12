@@ -12,7 +12,7 @@ terraform plan
 
 terraform apply -var-file={{ YOUR_ENV_FILE_NAME }}.tfvars -auto-approve
 
-terraform destroy
+terraform destroy -var-file={{ YOUR_ENV_FILE_NAME }}.tfvars
 ```
 
 ### 1. Infra

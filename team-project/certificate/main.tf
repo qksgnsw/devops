@@ -16,8 +16,13 @@ resource "aws_acm_certificate" "this" {
   }
 }
 
+data "aws_route53_zone" "this" {
+  name = var.domain
+}
+
 resource "aws_route53_record" "validation" {
-  zone_id = var.host_zone_id  # Route 53 Hosted Zone ID
+  # zone_id = var.host_zone_id  # Route 53 Hosted Zone ID
+  zone_id = data.aws_route53_zone.this.zone_id
 
   for_each = {
     for dvo in aws_acm_certificate.this.domain_validation_options : dvo.domain_name => {

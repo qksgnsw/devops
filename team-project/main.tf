@@ -29,7 +29,6 @@ locals {
   azs      = slice(data.aws_availability_zones.available.names, 0, 2)
 
   domain       = var.domain
-  host_zone_id = var.host_zone_id
 
   bastion_user_data = <<-EOT
   #!/bin/bash
@@ -95,7 +94,6 @@ module "certificate" {
   source = "./certificate"
 
   domain       = local.domain
-  host_zone_id = local.host_zone_id
 }
 
 module "openvpn_sg" {

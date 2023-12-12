@@ -18,20 +18,34 @@ terraform destroy -var-file={{ YOUR_ENV_FILE_NAME }}.tfvars
 ### 1. Infra
 ---
 - [x] Infra
+
+
   - [x] vpc 생성
+
+
   - [x] Internet Gateway 생성
+
+
   - [x] 퍼블릭 서브넷 생성
     - [x] 라우팅 테이블 생성
+
+
   - [x] webserver-was 프라이빗 서브넷 생성
     - [x] 라우팅 테이블 생성
+
+
   - [x] db 프라이빗 서브넷 생성
     - [x] 라우팅 테이블 생성
+
+
   - [x] NAT Gateway 생성
     - [x] EIP 생성
 
 ### 2. Servers
 ---
 - [ ] Servers
+
+
   - [ ] OpenVPN
     - [x] 보안 그룹
     - [x] 구독관련된 내용이라 일단 BastionHost로 진행
@@ -59,12 +73,17 @@ terraform destroy -var-file={{ YOUR_ENV_FILE_NAME }}.tfvars
 
   - [ ] DB
     - [x] 보안 그룹
+    - [ ] was와의 연결 확인
+      - [ ] cli 연결
+      - [ ] was와의 연결
     - [ ] 정책 및 세팅 설정
       - [ ] Master-slave 구현
 
 ### 3. Services
 ---
 - [ ] Service
+
+
   - [ ] Route53
     - [x] 인증서
       - [x] 생성
@@ -76,3 +95,14 @@ terraform destroy -var-file={{ YOUR_ENV_FILE_NAME }}.tfvars
     - [ ] 장애조치 라우팅
     - [ ] 지역기반 라우팅
 
+
+  - [ ] Global Accelator
+
+### 4. dev
+---
+- [ ] frontend
+  - [ ] 웹서버 설정하기 
+- [ ] backend
+  - [ ] db 
+    - [ ] 스키마
+  - [ ] api

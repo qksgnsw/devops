@@ -5,7 +5,3 @@
 variable "domain" {
   
 }
-
-variable "host_zone_id" {
-  
-}
